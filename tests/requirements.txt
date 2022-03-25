@@ -1,0 +1,5 @@
+# App requirements.
+-r ../requirements/test.txt
+
+# Install django-generate-series in editable mode.
+#-e ./
