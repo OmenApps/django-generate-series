@@ -1,0 +1,66 @@
+[tool.poetry]
+name = "django-generate-series"
+version = "0.1.0"
+description = "Use Postgres' generate_series to create sequences with Django's ORM"
+authors = ["Jack Linke <jack@watervize.com>"]
+license = "Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/jacklinke/django-generate-series/"
+documentation = "https://django-generate-series.readthedocs.io/en/latest/"
+keywords = ["graph", "tree", "dag", "network", "directed"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Database",
+    "Topic :: Utilities",
+    "Environment :: Web Environment",
+    "Framework :: Django",
+    "Framework :: Django :: 2.2",
+    "Framework :: Django :: 3.0",
+    "Framework :: Django :: 3.1",
+    "Framework :: Django :: 3.2",
+]
+
+
+[tool.poetry.dependencies]
+python = "^3.7"
+django = "^3.2.12"
+pydantic = "^1.8"
+
+[tool.poetry.dev-dependencies]
+codecov = "^2.1.0"
+coverage = "^6"
+django = "^3.2.12"
+django-extensions = "^3.1.0"
+docutils = "^0.17"
+flake8 = "^4"
+invoke = "^1.5.1"
+mock = "^4"
+myst-parser = "^0.16.0"
+pre-commit = "^2.10.0"
+psycopg2-binary = "^2.9.3"
+pydantic = "^1.8"
+pytest = "^7.0.0"
+pytest-clarity = "^1.0.0"
+pytest-cov = "^3.0.0"
+pytest-django = "^4.2.0"
+pytest-sugar = "^0.9.4"
+sphinx = ">-4.0.0"
+sphinxcontrib-mermaid = "^0.6.0"
+tox = "^3.21.0"
+twine = "^3.4.0"
+Werkzeug = "^2.0.0"
+wheel = "^0.37.0"
+"zest.releaser" = "^6.22.0"
+
+[build-system]
+requires = ["poetry-core^1.0.0"]
+build-backend = "poetry.core.masonry.api"

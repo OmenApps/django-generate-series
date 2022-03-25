@@ -1,0 +1,21 @@
+version: '3'
+
+volumes:
+  postgres_data: {}
+
+services:
+  postgres:
+    # Installs 'postgres_with_extensions' in addition to default 'postgres' db
+    build:
+      context: .
+      dockerfile: ./compose/postgres/Dockerfile
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres_with_extensions
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_HOST=postgres
+    ports:
+      - "9932:5432"
+    restart: on-failure

@@ -1,1 +1,1 @@
-django-generate-series
+# django-generate-series
