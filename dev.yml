@@ -11,11 +11,11 @@ services:
       dockerfile: ./compose/postgres/Dockerfile
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    environment:
-      - POSTGRES_DB=postgres_with_extensions
-      - POSTGRES_USER=docker
-      - POSTGRES_PASSWORD=docker
-      - POSTGRES_HOST=postgres
+    # environment:
+    #   - POSTGRES_DB=postgres_with_extensions
+    #   - POSTGRES_USER=docker
+    #   - POSTGRES_PASSWORD=docker
+    #   - POSTGRES_HOST=postgres
     ports:
       - "9932:5432"
     restart: on-failure
