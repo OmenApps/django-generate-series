@@ -36,6 +36,7 @@ django = "^3.2.12"
 pydantic = "^1.8"
 
 [tool.poetry.dev-dependencies]
+black = {version = "^22.1.0", allow-prereleases = true}
 codecov = "^2.1.0"
 coverage = "^6"
 django = "^3.2.12"
@@ -43,6 +44,7 @@ django-extensions = "^3.1.0"
 docutils = "^0.17"
 flake8 = "^4"
 invoke = "^1.5.1"
+isort = "^5.10.1"
 mock = "^4"
 myst-parser = "^0.16.0"
 pre-commit = "^2.10.0"
