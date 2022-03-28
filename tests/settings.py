@@ -81,15 +81,6 @@ DATABASES = {
         "PORT": os.environ.get("DB_PORT", "9932"),
         "CONN_MAX_AGE": 600,
     },
-    "with_extensions": {
-        "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": os.environ.get("DB_NAME_WITH_EXTENSIONS", "postgres_with_extensions"),
-        "USER": os.environ.get("DB_USER", "docker"),
-        "PASSWORD": os.environ.get("DB_PASSWORD", "docker"),
-        "HOST": os.environ.get("DB_HOST", "localhost"),
-        "PORT": os.environ.get("DB_PORT", "9932"),
-        "CONN_MAX_AGE": 600,
-    },
 }
 
 # Password validation
