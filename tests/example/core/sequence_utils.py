@@ -2,7 +2,7 @@ import datetime
 import decimal
 
 from django.utils import timezone
-from typing import List, Tuple, Union
+from typing import List, Union
 
 
 def _datetimes_using_end(start_datetime, step, end_datetime, strip_time):
@@ -38,9 +38,9 @@ def get_datetime_sequence(
     end_datetime: timezone.datetime = None,
     num_steps: int = 10,
     strip_time: bool = False,
-) -> Tuple[timezone.datetime]:
+):
     """
-    Returns a sequential tuple of datimetimes from start_datetime to either end_datetime
+    Generates a sequential tuple of datimetimes from start_datetime to either end_datetime
       or over the number of steps, defaulting to 10 steps if neither is provided.
 
     start_datetime: defaults to timezone.now()
@@ -63,7 +63,7 @@ def get_datetime_sequence(
     return datetimes
 
 
-def get_date_sequence(*args, **kwargs) -> Tuple[datetime.date]:
+def get_date_sequence(*args, **kwargs):
     """
     Generates a sequence of dates
         Takes same arguments as get_datetime_sequence
@@ -73,7 +73,7 @@ def get_date_sequence(*args, **kwargs) -> Tuple[datetime.date]:
     return get_datetime_sequence(*args, **kwargs)
 
 
-def get_datetime_range_sequence(*args, **kwargs) -> Tuple[Tuple[timezone.datetime]]:
+def get_datetime_range_sequence(*args, **kwargs):
     """
     Generates a sequence of datetime ranges
         Takes same arguments as get_datetime_sequence
@@ -83,7 +83,7 @@ def get_datetime_range_sequence(*args, **kwargs) -> Tuple[Tuple[timezone.datetim
     return _to_sequence_of_datetime_range(get_datetime_sequence(*args, **kwargs), step)
 
 
-def get_date_range_sequence(*args, **kwargs) -> Tuple[Tuple[datetime.date]]:
+def get_date_range_sequence(*args, **kwargs):
     """
     Generates a sequence of date ranges
         Takes same arguments as get_date_sequence
@@ -115,7 +115,10 @@ def get_decimal_sequence(
     step: Union[decimal.Decimal, int] = decimal.Decimal("1.00"),
     end: decimal.Decimal = None,
     num_steps: decimal.Decimal = decimal.Decimal("10.00"),
-) -> Tuple[decimal.Decimal]:
+):
+    """
+    Generates a sequence of decimals
+    """
     if end is not None:
         # Using end
         if not start < end:
@@ -130,7 +133,7 @@ def get_decimal_sequence(
     return decimals
 
 
-def get_decimal_range_sequence(*args, **kwargs) -> Tuple[datetime.date]:
+def get_decimal_range_sequence(*args, **kwargs):
     """
     Generates a sequence of decimal ranges
         Takes same arguments as get_decimal_sequence
