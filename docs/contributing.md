@@ -7,6 +7,24 @@ For development and testing, you can run your own instance of Postgres (either l
 
 ## Getting up-and-running
 
+## Poetry
+
+### Install requirements
+
+This installs all packages needed for development and testing.
+
+```bash
+poetry install
+```
+
+*Note: You may need to run `poetry update` if there have been minor version updates to required packages.*
+
+### Start poetry environment in shell
+
+```bash
+poetry shell
+```
+
 ### Using Your Own postgres Instance
 
 To develop using your own Postgres instance, you may set the following environmental variables on your machine:
@@ -67,25 +85,6 @@ docker-compose -f dev.yml down --rmi all --remove-orphans -v
 
 ### Once you have a Running Postgres Instance
 
-#### Create a Python virtual environment:
-
-```bash
-python3 -m venv venv
-```
-
-#### Activate the virtual environment for local development:
-
-```bash
-source venv/bin/activate
-```
-
-#### Install packages for development and testing:
-
-This installs all packages needed for development and testing, and installs django-generate-series in editable mode from the local repo.
-
-```bash
-pip install -r ./tests/requirements.txt
-```
 
 #### Install pre-commits:
 
@@ -117,6 +116,13 @@ coverage html
 
 ```bash
 python manage.py check
+```
+```
+
+#### To run the example project in the python REPL:
+
+```bash
+python manage.py shell_plus
 ```
 
 

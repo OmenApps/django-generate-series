@@ -7,6 +7,7 @@
 
 readme
 installation
+usage_examples
 contributing
 authors
 changelog
