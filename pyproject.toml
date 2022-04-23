@@ -37,7 +37,7 @@ django = "^3.2.12"
 pydantic = "^1.8"
 
 [tool.poetry.dev-dependencies]
-black = {version = "^22.1.0", allow-prereleases = true}
+black = {version = "^22.3.0", allow-prereleases = true}
 codecov = "^2.1.0"
 coverage = "^6"
 django = "^3.2.12"
