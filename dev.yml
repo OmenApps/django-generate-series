@@ -5,17 +5,14 @@ volumes:
 
 services:
   postgres:
-    # Installs 'postgres_with_extensions' in addition to default 'postgres' db
-    build:
-      context: .
-      dockerfile: ./compose/postgres/Dockerfile
+    image: postgres:14
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # environment:
-    #   - POSTGRES_DB=postgres_with_extensions
-    #   - POSTGRES_USER=docker
-    #   - POSTGRES_PASSWORD=docker
-    #   - POSTGRES_HOST=postgres
     ports:
       - "9932:5432"
     restart: on-failure
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+      - POSTGRES_HOST=postgres
