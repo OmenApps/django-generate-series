@@ -2,48 +2,45 @@ import datetime
 import decimal
 import logging
 from time import time
+
 import pytest
-
-from psycopg2.extras import DateRange, DateTimeTZRange, NumericRange
-
 from django.contrib.postgres.fields import DateRangeField, DateTimeRangeField, DecimalRangeField, IntegerRangeField
 from django.db import models
-from django.db.models import Subquery, Sum, Count, OuterRef, Exists
+from django.db.models import Count, Exists, OuterRef, Subquery, Sum
 from django.utils import timezone
+from psycopg2.extras import DateRange, DateTimeTZRange, NumericRange
 
 from tests.example.core.models import (
-    DecimalTest,
-    DecimalRangeTest,
-    IntegerTest,
-    IntegerRangeTest,
-    DateTest,
-    DateRangeTest,
-    DateTimeTest,
-    DateTimeRangeTest,
-    ConcreteDecimalTest,
-    ConcreteDecimalRangeTest,
-    ConcreteIntegerTest,
-    ConcreteIntegerRangeTest,
-    ConcreteDateTest,
     ConcreteDateRangeTest,
-    ConcreteDateTimeTest,
+    ConcreteDateTest,
     ConcreteDateTimeRangeTest,
+    ConcreteDateTimeTest,
+    ConcreteDecimalRangeTest,
+    ConcreteDecimalTest,
+    ConcreteIntegerRangeTest,
+    ConcreteIntegerTest,
+    DateRangeTest,
+    DateTest,
+    DateTimeRangeTest,
+    DateTimeTest,
+    DecimalRangeTest,
+    DecimalTest,
+    IntegerRangeTest,
+    IntegerTest,
 )
-
 from tests.example.core.random_utils import (
     get_random_date,
     get_random_date_range,
     get_random_datetime,
     get_random_datetime_range,
 )
-
 from tests.example.core.sequence_utils import (
-    get_date_sequence,
-    get_datetime_sequence,
-    get_datetime_range_sequence,
     get_date_range_sequence,
-    get_decimal_sequence,
+    get_date_sequence,
+    get_datetime_range_sequence,
+    get_datetime_sequence,
     get_decimal_range_sequence,
+    get_decimal_sequence,
 )
 
 

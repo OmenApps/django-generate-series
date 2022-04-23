@@ -1,7 +1,8 @@
-import random
 import datetime
-from django.utils import timezone
+import random
 from typing import Tuple
+
+from django.utils import timezone
 
 
 def get_random_datetime(
@@ -10,6 +11,9 @@ def get_random_datetime(
     """
     Given a min_date value and an optional timedelta, returns a random datetime within the resulting span
     """
+
+    # ToDo: Allow input of date or datetime objects
+
     max_date = min_date + max_timedelta
 
     if not min_date < max_date:

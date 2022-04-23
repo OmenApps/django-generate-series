@@ -66,3 +66,8 @@ class ConcreteDateRangeTest(models.Model):
 
 class ConcreteDateTimeRangeTest(models.Model):
     some_field = DateTimeRangeField()
+
+
+class SimpleOrder(models.Model):
+    order_date = models.DateField()
+    cost = models.IntegerField()

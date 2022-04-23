@@ -1,8 +1,8 @@
 import datetime
 import decimal
+from typing import List, Union
 
 from django.utils import timezone
-from typing import List, Union
 
 
 def _datetimes_using_end(start_datetime, step, end_datetime, strip_time):
