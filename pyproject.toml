@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-generate-series"
-version = "0.1.0"
+version = "0.2.0"
 description = "Use Postgres' generate_series to create sequences with Django's ORM"
 authors = ["Jack Linke <jack@watervize.com>"]
 license = "Apache-2.0"
