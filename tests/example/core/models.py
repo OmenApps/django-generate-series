@@ -71,3 +71,9 @@ class ConcreteDateTimeRangeTest(models.Model):
 class SimpleOrder(models.Model):
     order_date = models.DateField()
     cost = models.IntegerField()
+
+
+class Event(models.Model):
+    event_datetime = models.DateTimeField()
+    ticket_qty = models.IntegerField()
+    false_field = models.BooleanField(default=False)
