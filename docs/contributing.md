@@ -7,9 +7,9 @@ For development and testing, you can run your own instance of Postgres (either l
 
 ## Getting up-and-running
 
-## Poetry
+### Poetry
 
-### Install requirements
+#### Install requirements
 
 This installs all packages needed for development and testing.
 
@@ -19,7 +19,7 @@ poetry install
 
 *Note: You may need to run `poetry update` if there have been minor version updates to required packages.*
 
-### Start poetry environment in shell
+#### Start poetry environment in shell
 
 ```bash
 poetry shell
