@@ -5,12 +5,12 @@ from datetime import datetime, date
 from decimal import Decimal
 from typing import Union, Optional, Type, List
 
+import django
 from django.contrib.postgres import fields as pg_models
 from django.db import models
 from django.db.models import Field
 from django.db.models.sql import Query
 from django.core.exceptions import ImproperlyConfigured
-from django.utils import version
 from django.utils.timezone import datetime as datetimetz
 
 from django_generate_series.base import NoEffectManager, NoEffectQuerySet
@@ -299,22 +299,11 @@ def get_series_model(
     ):
         raise ModelFieldNotSupported("Invalid model field type used to generate series")
 
-    # Versions of Django > 4.0 include support for defining default range bounds for
-    #   Range fields other than those based on Integer, so use it if provided.
-    django_version = version.get_version().split(".")
-
-    if not len(django_version) >= 2:
-        raise ImproperlyConfigured(
-            f"Django version number is not properly formatted. "
-            f"Expected a value of `#.#` or `#.#.#`, but received {django_version}. Is Django installed?"
-        )
-
     # Limit default_bounds to valid string values
     if default_bounds not in ["[]", "()", "[)", "(]"]:
         raise ValueError(f"Value of default_bounds must be one of: '[]', '()', '[)', '(]'")
 
     class SeriesModel(AbstractBaseSeriesModel):
-        id = model_field(primary_key=True)
         if issubclass(
             model_field,
             (
@@ -323,12 +312,20 @@ def get_series_model(
                 pg_models.DateTimeRangeField,
             ),
         ):
-            if float(django_version[0]) >= 4 and float(django_version[1]) >= 1:
+            # Versions of Django > 4.1 include support for defining default range bounds for
+            #   Range fields other than those based on Integer, so use it if provided.
+
+            if django.VERSION >= (4, 1):
                 id = model_field(primary_key=True, default_bounds=default_bounds)
 
+        elif issubclass(model_field, models.DecimalField):
+            id = model_field(
+                primary_key=True,
+                max_digits=max_digits,
+                decimal_places=decimal_places,
+            )
         else:
-            if issubclass(model_field, models.DecimalField):
-                id = model_field(primary_key=True, max_digits=max_digits, decimal_places=decimal_places)
+            id = model_field(primary_key=True)
 
         objects = GenerateSeriesManager()
 
