@@ -30,7 +30,6 @@ poetry shell
 To develop using your own Postgres instance, you may set the following environmental variables on your machine:
 
 - DB_NAME (defaults to "postgres")
-- DB_NAME_WITH_EXTENSIONS (defaults to "postgres_with_extensions")
 - DB_USER (defaults to "docker")
 - DB_PASSWORD (defaults to "docker")
 - DB_HOST (defaults to "localhost")
@@ -56,18 +55,11 @@ docker-compose -f dev.yml up -d --no-deps --force-recreate --build postgres
 
 These are the database connection details:
 
-    DB = postgres *and* postgres_with_extensions
+    DB = postgres
     USER = docker
     PASSWORD = docker
     HOST = postgres
     PORT = 9932
-
-Note that the docker-compose postgres service creates two databases:
-
-- The default `postgres` database with default functionality. In Django tests, this is the `default` database.
-- A database named `postgres_with_extensions`, which has the plpython3u extension installed. In Django tests, this is the `with_extensions` database.
-
-*(The PL/Python procedural language is used in tests of advanced backend functionality which can make use of python-based graph libraries)*
 
 #### To check the status of the database container:
 
@@ -117,47 +109,12 @@ coverage html
 ```bash
 python manage.py check
 ```
-```
 
 #### To run the example project in the python REPL:
 
 ```bash
 python manage.py shell_plus
 ```
-
-
-## Package Structure
-
-Because django-generate-series supports multiple types of directed graphs, the underlying functionality can be a bit complex to understand at first. This shouldn't matter much if you are only building, querying, or manipulating graphs.
-
-If you want to contribute to development of this package or extend the functionality of django-generate-series by creating installable apps and plugins for new graph types or customized graph behavior, it is critical to understand what functionality exists where.
-
-| Folder/File                        |                                                                              |
-| ---------------------------------- | ---------------------------------------------------------------------------- |
-| 📦django_generate_series            |                                                                              |
-| ┣ 📂models                          |                                                                              |
-| ┃ ┣ 📜__init__.py                   |                                                                              |
-| ┃ ┣ 📜abstract_base_models.py       | Lowest-level models (used for validating model type inheritance)             |
-| ┃ ┣ 📜abstract_base_graph_models.py | Provides functionality common to all graphs                                  |
-| ┃ ┣ 📜abstract_graph_models.py      | Breaks out functionality specific to each graph type                         |
-| ┃ ┗ 📜model_factory.py              | Provides the means of creating multiple graph moseld for each graph type     |
-| ┣ 📂static                          | Package Static files                                                         |
-| ┣ 📂templates                       | Package Default Templates                                                    |
-| ┣ 📂templatetags                    | Package Templatetags                                                         |
-| ┣ 📜__init__.py                     |                                                                              |
-| ┣ 📜admin.py                        | Tools for working with graphs in Django admin                                |
-| ┣ 📜apps.py                         |                                                                              |
-| ┣ 📜context_managers.py             | Utility context manager to simplify reference to a particular graph instance |
-| ┣ 📜exceptions.py                   | Exceptions specific to this package                                          |
-| ┣ 📜fields.py                       | CurrentGraphField which simplifies working with Edge and Node models         |
-| ┣ 📜manager_methods.py              | WIP                                                                          |
-| ┣ 📜model_methods.py                | WIP                                                                          |
-| ┣ 📜query_utils.py                  | Uilities for building and manipulating queries                               |
-| ┣ 📜queryset_methods.py             | WIP                                                                          |
-| ┣ 📜urls.py                         |                                                                              |
-| ┣ 📜validators.py                   | WIP                                                                          |
-| ┗ 📜views.py                        |                                                                              |
-
 
 ## Build the docs
 
