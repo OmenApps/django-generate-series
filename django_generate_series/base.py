@@ -1,201 +1,63 @@
-import logging
+import warnings
 
 from django.db import models
 
-logger = logging.getLogger("django_generate_series")
+
+def _warn_no_effect(self, *args, **kwargs):
+    warnings.warn(
+        "This model has been intentionally limited in capability. "
+        "The requested method has no effect and will be ignored.",
+        stacklevel=2,
+    )
+    return self
 
 
 class NoEffectQuerySet(models.QuerySet):
-    def log_no_effect_method_warning(self):
-        logger.warning(
-            "This model has been intentionally limited in capability. "
-            "The requested method has no effect and will be ignored."
-        )
-
-    def delete(self):
-        self.log_no_effect_method_warning()
-        return self
+    delete = _warn_no_effect
 
 
 class NoEffectManager(models.Manager):
-    def log_no_effect_method_warning(self):
-        logger.warning(
-            "This model has been intentionally limited in capability. "
-            "Until a series has been generated, the requested method has no effect."
-        )
-
-    def filter(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def exclude(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def annotate(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def alias(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def order_by(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def reverse(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def distinct(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def values(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def values_list(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def dates(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def datetimes(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def none(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def all(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def union(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def intersection(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def difference(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def select_related(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def prefetch_related(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def extra(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def defer(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def only(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def using(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def select_for_update(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def raw(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def get(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def create(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def get_or_create(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def update_or_create(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def bulk_create(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def bulk_update(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def count(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def in_bulk(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def iterator(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def latest(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def earliest(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def first(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def last(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def aggregate(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def exists(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def contains(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def update(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def delete(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def as_manager(self):
-        self.log_no_effect_method_warning()
-        return self
-
-    def explain(self):
-        self.log_no_effect_method_warning()
-        return self
+    filter = _warn_no_effect
+    exclude = _warn_no_effect
+    annotate = _warn_no_effect
+    alias = _warn_no_effect
+    order_by = _warn_no_effect
+    reverse = _warn_no_effect
+    distinct = _warn_no_effect
+    values = _warn_no_effect
+    values_list = _warn_no_effect
+    dates = _warn_no_effect
+    datetimes = _warn_no_effect
+    none = _warn_no_effect
+    all = _warn_no_effect
+    union = _warn_no_effect
+    intersection = _warn_no_effect
+    difference = _warn_no_effect
+    select_related = _warn_no_effect
+    prefetch_related = _warn_no_effect
+    extra = _warn_no_effect
+    defer = _warn_no_effect
+    only = _warn_no_effect
+    using = _warn_no_effect
+    select_for_update = _warn_no_effect
+    raw = _warn_no_effect
+    get = _warn_no_effect
+    create = _warn_no_effect
+    get_or_create = _warn_no_effect
+    update_or_create = _warn_no_effect
+    bulk_create = _warn_no_effect
+    bulk_update = _warn_no_effect
+    count = _warn_no_effect
+    in_bulk = _warn_no_effect
+    iterator = _warn_no_effect
+    latest = _warn_no_effect
+    earliest = _warn_no_effect
+    first = _warn_no_effect
+    last = _warn_no_effect
+    aggregate = _warn_no_effect
+    exists = _warn_no_effect
+    contains = _warn_no_effect
+    update = _warn_no_effect
+    delete = _warn_no_effect
+    as_manager = _warn_no_effect
+    explain = _warn_no_effect
