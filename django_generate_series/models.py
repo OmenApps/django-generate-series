@@ -1,21 +1,19 @@
 import decimal
-
 from dataclasses import dataclass
-from datetime import datetime, date
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Union, Optional, Type, List
+from typing import List, Optional, Type, Union
 
 from django.contrib.postgres import fields as pg_models
+from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import Field
 from django.db.models.sql import Query
-from django.core.exceptions import ImproperlyConfigured
 from django.utils import version
 from django.utils.timezone import datetime as datetimetz
 
 from django_generate_series.base import NoEffectManager, NoEffectQuerySet
 from django_generate_series.exceptions import ModelFieldNotSupported
-
 
 INTERVAL_UNITS = (
     "century",
