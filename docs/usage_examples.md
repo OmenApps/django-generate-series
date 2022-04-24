@@ -363,5 +363,3 @@ ORDER BY
   "core_datetimerangetest"."id" ASC;
 
 ```
-
-## Use the previous example
