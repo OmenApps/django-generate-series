@@ -104,7 +104,7 @@ class GenerateSeriesManager(NoEffectManager):
 
             # Verify the input params match for the type of model field used
 
-            if any((issubclass(self.id, models.DecimalField), issubclass(self.id, pg_models.DecimalRangeField))):
+            if issubclass(self.id, (models.DecimalField, pg_models.DecimalRangeField)):
                 self.check_params(
                     start_type=[int, Decimal],
                     stop_type=[int, Decimal],
@@ -112,7 +112,7 @@ class GenerateSeriesManager(NoEffectManager):
                 )
                 self.field_type = decimal.Decimal
 
-            elif any((issubclass(self.id, models.DateField), issubclass(self.id, pg_models.DateRangeField))):
+            elif issubclass(self.id, (models.DateField, pg_models.DateRangeField)):
                 self.check_params(
                     start_type=[date],
                     stop_type=[date],
@@ -120,7 +120,7 @@ class GenerateSeriesManager(NoEffectManager):
                 )
                 self.field_type = datetime.date
 
-            elif any((issubclass(self.id, models.DateTimeField), issubclass(self.id, pg_models.DateTimeRangeField))):
+            elif issubclass(self.id, (models.DateTimeField, pg_models.DateTimeRangeField)):
                 self.check_params(
                     start_type=[datetime, datetimetz],
                     stop_type=[datetime, datetimetz],
@@ -128,13 +128,14 @@ class GenerateSeriesManager(NoEffectManager):
                 )
                 self.field_type = datetimetz
 
-            elif any(
+            elif issubclass(
+                self.id,
                 (
-                    issubclass(self.id, models.BigIntegerField),
-                    issubclass(self.id, models.IntegerField),
-                    issubclass(self.id, pg_models.BigIntegerRangeField),
-                    issubclass(self.id, pg_models.IntegerRangeField),
-                )
+                    models.BigIntegerField,
+                    models.IntegerField,
+                    pg_models.BigIntegerRangeField,
+                    pg_models.IntegerRangeField,
+                ),
             ):
                 self.check_params(
                     start_type=[int],
@@ -142,25 +143,21 @@ class GenerateSeriesManager(NoEffectManager):
                     step_type=[int],
                 )
 
-                if any(
-                    (
-                        issubclass(self.id, models.BigIntegerField),
-                        issubclass(self.id, pg_models.BigIntegerRangeField),
-                    )
-                ):
+                if issubclass(self.id, (models.BigIntegerField, pg_models.BigIntegerRangeField)):
                     self.field_type = "BigInteger"  # ToDo: Find a better way to standarize self.field_type
 
             else:
                 raise ModelFieldNotSupported("Invalid model field type used to generate series")
 
-            if any(
+            if issubclass(
+                self.id,
                 (
-                    issubclass(self.id, pg_models.BigIntegerRangeField),
-                    issubclass(self.id, pg_models.IntegerRangeField),
-                    issubclass(self.id, pg_models.DecimalRangeField),
-                    issubclass(self.id, pg_models.DateRangeField),
-                    issubclass(self.id, pg_models.DateTimeRangeField),
-                )
+                    pg_models.BigIntegerRangeField,
+                    pg_models.IntegerRangeField,
+                    pg_models.DecimalRangeField,
+                    pg_models.DateRangeField,
+                    pg_models.DateTimeRangeField,
+                ),
             ):
                 self.range = True
 
@@ -283,19 +280,20 @@ def get_series_model(
 
     if model_field is None:
         raise Exception("model_field must be provided")
-    if not any(
-        [
-            issubclass(model_field, models.BigIntegerField),
-            issubclass(model_field, models.IntegerField),
-            issubclass(model_field, models.DecimalField),
-            issubclass(model_field, models.DateField),
-            issubclass(model_field, models.DateTimeField),
-            issubclass(model_field, pg_models.BigIntegerRangeField),
-            issubclass(model_field, pg_models.IntegerRangeField),
-            issubclass(model_field, pg_models.DecimalRangeField),
-            issubclass(model_field, pg_models.DateRangeField),
-            issubclass(model_field, pg_models.DateTimeRangeField),
-        ]
+    if not issubclass(
+        model_field,
+        (
+            models.BigIntegerField,
+            models.IntegerField,
+            models.DecimalField,
+            models.DateField,
+            models.DateTimeField,
+            pg_models.BigIntegerRangeField,
+            pg_models.IntegerRangeField,
+            pg_models.DecimalRangeField,
+            pg_models.DateRangeField,
+            pg_models.DateTimeRangeField,
+        ),
     ):
         raise ModelFieldNotSupported("Invalid model field type used to generate series")
 
@@ -315,12 +313,13 @@ def get_series_model(
 
     class SeriesModel(AbstractBaseSeriesModel):
         id = model_field(primary_key=True)
-        if any(
-            [
-                issubclass(model_field, pg_models.DecimalRangeField),
-                issubclass(model_field, pg_models.DateRangeField),
-                issubclass(model_field, pg_models.DateTimeRangeField),
-            ]
+        if issubclass(
+            model_field,
+            (
+                pg_models.DecimalRangeField,
+                pg_models.DateRangeField,
+                pg_models.DateTimeRangeField,
+            ),
         ):
             if float(django_version[0]) >= 4 and float(django_version[1]) >= 1:
                 id = model_field(primary_key=True, default_bounds=default_bounds)
