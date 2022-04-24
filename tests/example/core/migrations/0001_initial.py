@@ -8,161 +8,160 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='DateRangeTest',
+            name="DateRangeTest",
             fields=[
-                ('id', django.contrib.postgres.fields.ranges.DateRangeField(primary_key=True, serialize=False)),
+                ("id", django.contrib.postgres.fields.ranges.DateRangeField(primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='DateTest',
+            name="DateTest",
             fields=[
-                ('id', models.DateField(primary_key=True, serialize=False)),
+                ("id", models.DateField(primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='DateTimeRangeTest',
+            name="DateTimeRangeTest",
             fields=[
-                ('id', django.contrib.postgres.fields.ranges.DateTimeRangeField(primary_key=True, serialize=False)),
+                ("id", django.contrib.postgres.fields.ranges.DateTimeRangeField(primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='DateTimeTest',
+            name="DateTimeTest",
             fields=[
-                ('id', models.DateTimeField(primary_key=True, serialize=False)),
+                ("id", models.DateTimeField(primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='DecimalRangeTest',
+            name="DecimalRangeTest",
             fields=[
-                ('id', django.contrib.postgres.fields.ranges.DecimalRangeField(primary_key=True, serialize=False)),
+                ("id", django.contrib.postgres.fields.ranges.DecimalRangeField(primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='DecimalTest',
+            name="DecimalTest",
             fields=[
-                ('id', models.DecimalField(decimal_places=2, max_digits=9, primary_key=True, serialize=False)),
+                ("id", models.DecimalField(decimal_places=2, max_digits=9, primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='IntegerRangeTest',
+            name="IntegerRangeTest",
             fields=[
-                ('id', django.contrib.postgres.fields.ranges.IntegerRangeField(primary_key=True, serialize=False)),
+                ("id", django.contrib.postgres.fields.ranges.IntegerRangeField(primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='IntegerTest',
+            name="IntegerTest",
             fields=[
-                ('id', models.IntegerField(primary_key=True, serialize=False)),
+                ("id", models.IntegerField(primary_key=True, serialize=False)),
             ],
             options={
-                'abstract': False,
-                'managed': False,
+                "abstract": False,
+                "managed": False,
             },
         ),
         migrations.CreateModel(
-            name='ConcreteDateRangeTest',
+            name="ConcreteDateRangeTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', django.contrib.postgres.fields.ranges.DateRangeField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", django.contrib.postgres.fields.ranges.DateRangeField()),
             ],
         ),
         migrations.CreateModel(
-            name='ConcreteDateTest',
+            name="ConcreteDateTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', models.DateField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", models.DateField()),
             ],
         ),
         migrations.CreateModel(
-            name='ConcreteDateTimeRangeTest',
+            name="ConcreteDateTimeRangeTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', django.contrib.postgres.fields.ranges.DateTimeRangeField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", django.contrib.postgres.fields.ranges.DateTimeRangeField()),
             ],
         ),
         migrations.CreateModel(
-            name='ConcreteDateTimeTest',
+            name="ConcreteDateTimeTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', models.DateTimeField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", models.DateTimeField()),
             ],
         ),
         migrations.CreateModel(
-            name='ConcreteDecimalRangeTest',
+            name="ConcreteDecimalRangeTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', django.contrib.postgres.fields.ranges.DecimalRangeField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", django.contrib.postgres.fields.ranges.DecimalRangeField()),
             ],
         ),
         migrations.CreateModel(
-            name='ConcreteDecimalTest',
+            name="ConcreteDecimalTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', models.DecimalField(decimal_places=2, max_digits=9)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", models.DecimalField(decimal_places=2, max_digits=9)),
             ],
         ),
         migrations.CreateModel(
-            name='ConcreteIntegerRangeTest',
+            name="ConcreteIntegerRangeTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', django.contrib.postgres.fields.ranges.IntegerRangeField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", django.contrib.postgres.fields.ranges.IntegerRangeField()),
             ],
         ),
         migrations.CreateModel(
-            name='ConcreteIntegerTest',
+            name="ConcreteIntegerTest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('some_field', models.IntegerField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("some_field", models.IntegerField()),
             ],
         ),
         migrations.CreateModel(
-            name='Event',
+            name="Event",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('event_datetime', models.DateTimeField()),
-                ('ticket_qty', models.IntegerField()),
-                ('false_field', models.BooleanField(default=False)),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("event_datetime", models.DateTimeField()),
+                ("ticket_qty", models.IntegerField()),
+                ("false_field", models.BooleanField(default=False)),
             ],
         ),
         migrations.CreateModel(
-            name='SimpleOrder',
+            name="SimpleOrder",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('order_date', models.DateField()),
-                ('cost', models.IntegerField()),
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("order_date", models.DateField()),
+                ("cost", models.IntegerField()),
             ],
         ),
     ]
