@@ -43,40 +43,56 @@ jobs:
           # Django 2.2
           - django-version: "2.2.0"
             python-version: "3.7"
+            psycopg2-version: "2.8.6"
           - django-version: "2.2.0"
             python-version: "3.8"
+            psycopg2-version: "2.8.6"
           - django-version: "2.2.0"
             python-version: "3.9"
+            psycopg2-version: "2.8.6"
           # Django 3.0
           - django-version: "3.0.0"
             python-version: "3.7"
+            psycopg2-version: "2.8.6"
           - django-version: "3.0.0"
             python-version: "3.8"
+            psycopg2-version: "2.8.6"
           - django-version: "3.0.0"
             python-version: "3.9"
+            psycopg2-version: "2.8.6"
           # Django 3.1
           - django-version: "3.1.0"
             python-version: "3.7"
+            psycopg2-version: "2.9.3"
           - django-version: "3.1.0"
             python-version: "3.8"
+            psycopg2-version: "2.9.3"
           - django-version: "3.1.0"
             python-version: "3.9"
+            psycopg2-version: "2.9.3"
           # Django 3.2
           - django-version: "3.2.0"
             python-version: "3.7"
+            psycopg2-version: "2.9.3"
           - django-version: "3.2.0"
             python-version: "3.8"
+            psycopg2-version: "2.9.3"
           - django-version: "3.2.0"
             python-version: "3.9"
+            psycopg2-version: "2.9.3"
           - django-version: "3.2.0"
             python-version: "3.10"
+            psycopg2-version: "2.9.3"
           # Django 4.0
           - django-version: "4.0.0"
             python-version: "3.8"
+            psycopg2-version: "2.9.3"
           - django-version: "4.0.0"
             python-version: "3.9"
+            psycopg2-version: "2.9.3"
           - django-version: "4.0.0"
             python-version: "3.10"
+            psycopg2-version: "2.9.3"
 
     steps:
       - uses: actions/checkout@v2
@@ -97,6 +113,12 @@ jobs:
       - name: Install specific django version
         run: |
           python -m pip install "Django~=${{ matrix.django-version }}"
+
+      - name: Install specific psycopg2 version
+        # Django 2.2 & 3.0 do not like newer versions of psycopg2
+        # See https://github.com/psycopg/psycopg2/issues/1293#issuecomment-862835147
+        run: |
+          python -m pip install "psycopg2-binary~=${{ matrix.psycopg2-version }}"
 
       - name: Echo Python and Django versions
         run: |
