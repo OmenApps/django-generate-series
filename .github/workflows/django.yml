@@ -23,8 +23,7 @@ jobs:
       - run: python -m pip install isort
       - run: isort --profile=black --line-length=119 .
 
-  build:
-
+  test:
     runs-on: ubuntu-latest
 
     services:
@@ -38,23 +37,77 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     strategy:
-      max-parallel: 4
+      fail-fast: false
       matrix:
-        python-version: [3.7, 3.8, 3.9, "3.10"]
+        include:
+          # Django 2.2
+          - django-version: "2.2.0"
+            python-version: "3.7"
+          - django-version: "2.2.0"
+            python-version: "3.8"
+          - django-version: "2.2.0"
+            python-version: "3.9"
+          # Django 3.0
+          - django-version: "3.0.0"
+            python-version: "3.7"
+          - django-version: "3.0.0"
+            python-version: "3.8"
+          - django-version: "3.0.0"
+            python-version: "3.9"
+          # Django 3.1
+          - django-version: "3.1.0"
+            python-version: "3.7"
+          - django-version: "3.1.0"
+            python-version: "3.8"
+          - django-version: "3.1.0"
+            python-version: "3.9"
+          # Django 3.2
+          - django-version: "3.2.0"
+            python-version: "3.7"
+          - django-version: "3.2.0"
+            python-version: "3.8"
+          - django-version: "3.2.0"
+            python-version: "3.9"
+          - django-version: "3.2.0"
+            python-version: "3.10"
+          # Django 4.0
+          - django-version: "4.0.0"
+            python-version: "3.8"
+          - django-version: "4.0.0"
+            python-version: "3.9"
+          - django-version: "4.0.0"
+            python-version: "3.10"
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r ./tests/requirements.txt
-    - name: Run Migrations
-      run: |
-        python manage.py migrate
-    - name: Run Tests
-      run: |
-        pytest
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip version
+        run: |
+          python -m pip install --upgrade pip
+
+      - name: Install Dependencies
+        run: |
+          pip install -r ./tests/requirements.txt
+
+      - name: Install specific django version
+        run: |
+          python -m pip install "Django~=${{ matrix.django-version }}"
+
+      - name: Echo Python and Django versions
+        run: |
+          echo "Python ${{ matrix.python-version }} -> Django ${{ matrix.django-version }}"
+          python --version
+          echo "Django: `django-admin --version`"
+
+      - name: Run Migrations
+        run: |
+          python manage.py migrate
+
+      - name: Run Tests
+        run: |
+          pytest
