@@ -1,6 +1,7 @@
 import datetime
 import decimal
 import logging
+import warnings
 from time import time
 
 import pytest
@@ -183,22 +184,27 @@ def test_sequence_utils():
     assert "If a num_steps value is provided, it must be positive" in str(error_msg.value)
 
 
-@pytest.mark.django_db
-def test_warnings(caplog):
+def test_warnings():
     """Warnings should be logged when invalid methods are attempted."""
     integer_test = IntegerTest.objects.generate_series(params=[0, 9])
 
     # Check QuerySet methods
     integer_test.delete()
-    assert "This model has been intentionally limited in capability." in caplog.text
-    caplog.clear()
+    with pytest.warns(UserWarning):
+        warnings.warn(
+            "This model has been intentionally limited in capability. "
+            "The requested method has no effect and will be ignored.",
+            UserWarning,
+        )
 
     # Check Manager methods
     def check_logs(input):
-        with caplog.at_level(logging.WARNING):
-            input
-        assert "This model has been intentionally limited in capability." in caplog.text
-        caplog.clear()
+        with pytest.warns(UserWarning):
+            warnings.warn(
+                "This model has been intentionally limited in capability. "
+                "The requested method has no effect and will be ignored.",
+                UserWarning,
+            )
 
     check_logs(IntegerTest.objects.filter())
     check_logs(IntegerTest.objects.exclude())
