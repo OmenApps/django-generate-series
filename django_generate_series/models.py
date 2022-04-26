@@ -298,21 +298,21 @@ def get_series_model(
         raise ValueError(f"Value of default_bounds must be one of: '[]', '()', '[)', '(]'")
 
     class SeriesModel(AbstractBaseSeriesModel):
-        if issubclass(
-            model_field,
-            (
-                pg_models.DecimalRangeField,
-                pg_models.DateRangeField,
-                pg_models.DateTimeRangeField,
-            ),
+        if (
+            issubclass(
+                model_field,
+                (
+                    pg_models.DecimalRangeField,
+                    pg_models.DateRangeField,
+                    pg_models.DateTimeRangeField,
+                ),
+            )
+            and django.VERSION >= (4, 1)
+            and default_bounds is not None
         ):
             # Versions of Django > 4.1 include support for defining default range bounds for
             #   Range fields other than those based on Integer, so use it if provided.
-
-            if django.VERSION >= (4, 1) and default_bounds is not None:
-                id = model_field(primary_key=True, default_bounds=default_bounds)
-            else:
-                id = model_field(primary_key=True)
+            id = model_field(primary_key=True, default_bounds=default_bounds)
 
         elif issubclass(model_field, models.DecimalField):
             id = model_field(
