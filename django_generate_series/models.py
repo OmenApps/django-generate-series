@@ -164,10 +164,6 @@ class GenerateSeriesManager(NoEffectManager):
             self.raw_query = f"({self.get_raw_query()})"
 
         def get_raw_query(self):
-            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            # ToDo: Generate the various raw SQL strings here, based on self.id and self.params
-            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
             if self.range:
 
                 if self.field_type is datetimetz:
