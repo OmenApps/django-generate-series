@@ -65,57 +65,55 @@ class DateTimeRangeTest(get_series_model(DateTimeRangeField)):
 ## API
 
 ```python
-# Create a BUNCH of sequential integers
-integer_sequence_queryset = IntegerTest.objects.generate_series(
-    [0, 100_000_000]
+# Create a bunch of sequential integers
+integer_sequence_queryset = generate_series(
+    0, 1000, output_field=models.IntegerField,
 )
 
 for item in integer_sequence_queryset:
-    print(item.id, item.term)
+    print(item.term)
 ```
 
 Result:
 
-    1 0
-    2 1
-    3 2
-    4 3
-    5 4
-    6 5
-    7 6
-    8 7
-    9 8
-    10 9
-    11 10
+    0
+    1
+    2
+    3
+    4
+    5
+    6
+    7
+    8
+    9
+    10
     ...
+    1000
 
 ```python
 # Create a sequence of dates from now until a year from now
-now = timezone.now()
+now = timezone.now().date()
 later = (now + timezone.timedelta(days=365))
 
-date_sequence_queryset = DateTest.objects.generate_series(
-    [now, later, "1 days"]
+date_sequence_queryset = generate_series(
+    now, later, "1 days", output_field=models.DateField,
 )
 
 for item in date_sequence_queryset:
-    print(item.id, item.term)
+    print(item.term)
 ```
 
 Result:
 
-    1 2022-04-27 02:01:35.926057+00:00
-    2 2022-04-28 02:01:35.926057+00:00
-    3 2022-04-29 02:01:35.926057+00:00
-    4 2022-04-30 02:01:35.926057+00:00
-    5 2022-05-01 02:01:35.926057+00:00
-    6 2022-05-02 02:01:35.926057+00:00
-    7 2022-05-03 02:01:35.926057+00:00
-    8 2022-05-04 02:01:35.926057+00:00
-    9 2022-05-05 02:01:35.926057+00:00
-    10 2022-05-06 02:01:35.926057+00:00
-    11 2022-05-07 02:01:35.926057+00:00
+    2022-04-27
+    2022-04-28
+    2022-04-29
+    2022-04-30
+    2022-05-01
+    2022-05-02
+    2022-05-03
     ...
+    2023-04-27
 
 ## Terminology
 

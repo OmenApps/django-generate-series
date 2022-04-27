@@ -1,6 +1,12 @@
 # History
 
 
+## 0.4.0 (2022-04-27)
+
+Breaking changes
+
+  * Modify API taking into consideration recommendations from Adam Johnson.
+
 ## 0.3.0 (2022-04-25)
 
 Breaking changes

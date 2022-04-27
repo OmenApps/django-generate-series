@@ -5,7 +5,51 @@
 Generate a sequence of every third integer from -12 to 12.
 
 ```python
-integer_sequence = IntegerTest.objects.generate_series([-12, 13, 3])
+from django.db import models
+from django_generate_series.models import generate_series
+
+integer_sequence = generate_series(-12, 13, 3, output_field=models.IntegerField)
+
+for item in integer_sequence:
+    print(item.term)
+
+""" Example:
+    -12
+    -9
+    -6
+    -3
+    0
+    3
+    6
+    9
+    12
+"""
+```
+
+Resulting SQL
+
+```sql
+SELECT
+  "django_generate_series_integerfieldseries"."term"
+FROM
+  (
+    SELECT
+      generate_series(-12, 13, 3) term
+  ) AS django_generate_series_integerfieldseries;
+```
+
+
+## Basic integer sequence example with id
+
+Generate a sequence of every third integer from -12 to 12, along with an auto-incrementing id field.
+
+To include the `id` field in any sequence, set `include_id=True`. This does add a small increase in overhead.
+
+```python
+from django.db import models
+from django_generate_series.models import generate_series
+
+integer_sequence = generate_series(-12, 13, 3, include_id=True, output_field=models.IntegerField)
 
 for item in integer_sequence:
     print(item.id, item.term)
@@ -26,16 +70,21 @@ for item in integer_sequence:
 Resulting SQL
 
 ```sql
-SELECT "core_integertest"."id", "core_integertest"."term" FROM (
+SELECT
+  "django_generate_series_integerfieldseries"."id",
+  "django_generate_series_integerfieldseries"."term"
+FROM
+  (
     SELECT
-        row_number() over () as id,
-        "term"
+      row_number() over () as id,
+      "term"
     FROM
-        (
+      (
         SELECT
-            generate_series( -12, 13, 3) term
-        ) AS seriesquery
-) AS core_integertest;
+          generate_series(-12, 13, 3) term
+      ) AS seriesquery
+  ) AS django_generate_series_integerfieldseries;
+
 ```
 
 ## Example with decimals
@@ -45,39 +94,36 @@ Generate a sequence of decimal values, starting from 0.000 and increasing by 1.2
 ```python
 import decimal
 
-decimal_sequence = DecimalTest.objects.generate_series(
-    [decimal.Decimal("0.000"), decimal.Decimal("10.000"), decimal.Decimal("1.234")]
+decimal_sequence = generate_series(
+    decimal.Decimal("0.000"), decimal.Decimal("10.000"), decimal.Decimal("1.234"), output_field=models.DecimalField,
 )
 
 for item in decimal_sequence:
-    print(item.id, item.term)
+    print(item.term)
 
 """ Example:
-    1 0.000
-    2 1.234
-    3 2.468
-    4 3.702
-    5 4.936
-    6 6.170
-    7 7.404
-    8 8.638
-    9 9.872
+    0.000
+    1.234
+    2.468
+    3.702
+    4.936
+    6.170
+    7.404
+    8.638
+    9.872
 """
 ```
 
 Resulting SQL
 
 ```sql
-SELECT "core_decimaltest"."id", "core_decimaltest"."term" FROM (
+SELECT
+  "django_generate_series_decimalfieldseries"."term"
+FROM
+  (
     SELECT
-        row_number() over () as id,
-        "term"
-    FROM
-        (
-        SELECT
-            generate_series(0.000, 10.000, 1.234) term
-        ) AS seriesquery
-) AS core_decimaltest;
+      generate_series(0.000, 10.000, 1.234) term
+  ) AS django_generate_series_decimalfieldseries;
 ```
 
 ## Get summed costs for orders placed every other day over the past month
@@ -126,8 +172,8 @@ previous = previous.date()
 now = now.date()
 
 # Annotate the generated DateTest sequence instances with the annotated Subquery
-date_sequence_queryset = DateTest.objects.generate_series(
-    [previous, now, "2 days"]
+date_sequence_queryset = generate_series(
+    previous, now, "2 days", output_field=models.DateField,
 ).annotate(daily_order_costs=Subquery(simple_order_subquery))
 
 # Print out all of the SimpleOrder objects (these are randomly generated, so your results may vary)
@@ -197,29 +243,23 @@ The resulting SQL would look something like
 
 ```sql
 SELECT
-  "core_datetest"."id",
-  "core_datetest"."term",
+  "django_generate_series_datefieldseries"."term",
   (
     SELECT
       SUM(U0."cost") AS "sum_of_cost"
     FROM
       "core_simpleorder" U0
     WHERE
-      U0."order_date" = "core_datetest"."term"
+      U0."order_date" = "django_generate_series_datefieldseries"."term"
     GROUP BY
       U0."order_date"
   ) AS "daily_order_costs"
 FROM
   (
     SELECT
-      row_number() over () as id,
-      "term"
-    FROM
-      (
-        SELECT
-          generate_series('2022-03-28' :: date, '2022-04-27' :: date, '2 days') term
-      ) AS seriesquery
-  ) AS core_datetest;
+      generate_series('2022-03-28' :: date, '2022-04-27' :: date, '2 days') :: date term
+  ) AS django_generate_series_datefieldseries;
+
 ```
 
 ## Work with a series of datetime ranges
@@ -240,6 +280,7 @@ class Event(models.Model):
 
 ```python
 import random
+from django.contrib.postgres.fields import DateTimeRangeField
 from django.db.models import OuterRef, Subquery, Sum, Count
 from tests.example.core.random_utils import get_random_datetime
 from tests.example.core.models import Event
@@ -321,7 +362,7 @@ event_subquery = (
 
 ```python
 datetime_range_sequence = (
-    DateTimeRangeTest.objects.generate_series([now, later, "7 days"])
+    generate_series(now, later, "7 days", output_field=DateTimeRangeField)
     .annotate(ticket_quantities=Subquery(event_subquery))
     .order_by("term")
 )
@@ -349,35 +390,28 @@ The resulting SQL would look something like
 
 ```sql
 SELECT
-  "core_datetimerangetest"."id",
-  "core_datetimerangetest"."term",
+  "django_generate_series_datetimerangefieldseries"."term",
   (
     SELECT
       SUM(U0."ticket_qty") AS "sum_of_tickets"
     FROM
       "core_event" U0
     WHERE
-      U0."event_datetime" <@ "core_datetimerangetest"."term" :: tstzrange
+      U0."event_datetime" < @ "django_generate_series_datetimerangefieldseries"."term" :: tstzrange
     GROUP BY
       U0."false_field"
   ) AS "ticket_quantities"
 FROM
   (
     SELECT
-      row_number() over () as id,
-      "term"
+      tstzrange((lag(a) OVER()), a, '[)') AS term
     FROM
-      (
-        SELECT
-          tstzrange((lag(a) OVER()), a, '[)') AS term
-        FROM
-          generate_series(
+      generate_series(
             timestamptz '2022-04-27T01:39:19.986299+00:00' :: timestamptz,
             timestamptz '2022-07-26T01:39:19.986299+00:00' :: timestamptz,
-            interval '7 days'
-          ) AS a OFFSET 1
-      ) AS subquery
-  ) AS core_datetimerangetest
+        interval '7 days'
+      ) AS a OFFSET 1
+  ) AS django_generate_series_datetimerangefieldseries
 ORDER BY
-  "core_datetimerangetest"."term" ASC;
+  "django_generate_series_datetimerangefieldseries"."term" ASC;
 ```

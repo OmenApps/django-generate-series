@@ -9,6 +9,7 @@ from django.db.models import Count, Exists, OuterRef, Subquery, Sum
 from django.utils import timezone
 from psycopg2.extras import DateRange, DateTimeTZRange, NumericRange
 
+from django_generate_series.models import generate_series
 from tests.example.core.models import (
     ConcreteDateRangeTest,
     ConcreteDateTest,
@@ -18,14 +19,6 @@ from tests.example.core.models import (
     ConcreteDecimalTest,
     ConcreteIntegerRangeTest,
     ConcreteIntegerTest,
-    DateRangeTest,
-    DateTest,
-    DateTimeRangeTest,
-    DateTimeTest,
-    DecimalRangeTest,
-    DecimalTest,
-    IntegerRangeTest,
-    IntegerTest,
 )
 from tests.example.core.random_utils import (
     get_random_date,
@@ -184,7 +177,7 @@ def test_sequence_utils():
 
 def test_warnings():
     """Warnings should be logged when invalid methods are attempted."""
-    integer_test = IntegerTest.objects.generate_series(params=[0, 9])
+    integer_test = generate_series(0, 9, output_field=models.IntegerField)
 
     # Check QuerySet methods
     integer_test.delete()
@@ -204,76 +197,31 @@ def test_warnings():
                 UserWarning,
             )
 
-    check_logs(IntegerTest.objects.filter())
-    check_logs(IntegerTest.objects.exclude())
-    check_logs(IntegerTest.objects.annotate())
-    check_logs(IntegerTest.objects.alias())
-    check_logs(IntegerTest.objects.order_by())
-    check_logs(IntegerTest.objects.reverse())
-    check_logs(IntegerTest.objects.distinct())
-    check_logs(IntegerTest.objects.values())
-    check_logs(IntegerTest.objects.values_list())
-    check_logs(IntegerTest.objects.dates())
-    check_logs(IntegerTest.objects.datetimes())
-    check_logs(IntegerTest.objects.none())
-    check_logs(IntegerTest.objects.all())
-    check_logs(IntegerTest.objects.union())
-    check_logs(IntegerTest.objects.intersection())
-    check_logs(IntegerTest.objects.difference())
-    check_logs(IntegerTest.objects.select_related())
-    check_logs(IntegerTest.objects.prefetch_related())
-    check_logs(IntegerTest.objects.extra())
-    check_logs(IntegerTest.objects.defer())
-    check_logs(IntegerTest.objects.only())
-    check_logs(IntegerTest.objects.using())
-    check_logs(IntegerTest.objects.select_for_update())
-    check_logs(IntegerTest.objects.raw())
-    check_logs(IntegerTest.objects.get())
-    check_logs(IntegerTest.objects.create())
-    check_logs(IntegerTest.objects.get_or_create())
-    check_logs(IntegerTest.objects.update_or_create())
-    check_logs(IntegerTest.objects.bulk_create())
-    check_logs(IntegerTest.objects.bulk_update())
-    check_logs(IntegerTest.objects.count())
-    check_logs(IntegerTest.objects.in_bulk())
-    check_logs(IntegerTest.objects.iterator())
-    check_logs(IntegerTest.objects.latest())
-    check_logs(IntegerTest.objects.earliest())
-    check_logs(IntegerTest.objects.first())
-    check_logs(IntegerTest.objects.last())
-    check_logs(IntegerTest.objects.aggregate())
-    check_logs(IntegerTest.objects.exists())
-    check_logs(IntegerTest.objects.contains())
-    check_logs(IntegerTest.objects.update())
-    check_logs(IntegerTest.objects.delete())
-    check_logs(IntegerTest.objects.as_manager())
-    check_logs(IntegerTest.objects.explain())
-
-
-@pytest.mark.django_db
-def test_params():
-    """Verify that the params object works as expected"""
-    from django_generate_series.models import Params
-
-    integer_test = IntegerTest.objects.generate_series(params=[0, 9])
-    assert integer_test.count() == 10
-
-    params = Params(start=0, stop=9, step=1)
-    integer_test = IntegerTest.objects.generate_series(params=params)
-    assert integer_test.count() == 10
-
-    params = Params(0, 9, 1)
-    integer_test = IntegerTest.objects.generate_series(params=params)
-    assert integer_test.count() == 10
-    assert integer_test.last().term - integer_test.first().term == 9
-
-    integer_test = IntegerTest.objects.generate_series((0, 9, 1))
-    assert integer_test.count() == 10
-
-    params = Params(start=9, stop=0, step=1)
-    with pytest.raises(Exception) as error_msg:
-        assert IntegerTest.objects.generate_series(params=params)
-    assert "Start value must be smaller than stop value" in str(error_msg.value)
+    check_logs(integer_test.filter())
+    check_logs(integer_test.exclude())
+    check_logs(integer_test.annotate())
+    check_logs(integer_test.alias())
+    check_logs(integer_test.order_by())
+    check_logs(integer_test.reverse())
+    check_logs(integer_test.distinct())
+    check_logs(integer_test.values())
+    check_logs(integer_test.values_list())
+    check_logs(integer_test.none())
+    check_logs(integer_test.all())
+    check_logs(integer_test.union())
+    check_logs(integer_test.intersection())
+    check_logs(integer_test.difference())
+    check_logs(integer_test.select_related())
+    check_logs(integer_test.prefetch_related())
+    check_logs(integer_test.extra())
+    check_logs(integer_test.defer())
+    check_logs(integer_test.only())
+    check_logs(integer_test.select_for_update())
+    check_logs(integer_test.iterator())
+    check_logs(integer_test.aggregate())
+    check_logs(integer_test.update())
+    check_logs(integer_test.delete())
+    check_logs(integer_test.as_manager())
 
 
 @pytest.mark.django_db
@@ -284,8 +232,14 @@ def test_integer_model():
     for idx in range(0, 10):
         ConcreteIntegerTest.objects.create(some_field=idx)
 
+    # Run through some variations
+    assert generate_series(0, 9, output_field=models.BigIntegerField).count() == 10
+    assert generate_series(0, 9, 2, output_field=models.BigIntegerField).count() == 5
+    assert generate_series(0, 9, 2, include_id=True, output_field=models.BigIntegerField).count() == 5
+    assert generate_series(0, 9, 2, include_id=True, output_field=models.BigIntegerField).last().id == 5
+
     # Make sure we can create a QuerySet and perform basic operations
-    integer_test = IntegerTest.objects.generate_series([0, 9])
+    integer_test = generate_series(0, 9, output_field=models.BigIntegerField)
     assert integer_test.count() == 10
     assert integer_test.first().term == 0
     assert integer_test.last().term == 9
@@ -320,9 +274,16 @@ def test_integer_model():
 
     # Check that we can query from the generate series model
     concrete_integer_test_values = ConcreteIntegerTest.objects.values("some_field")
-    assert IntegerTest.objects.generate_series([0, 9]).filter(term__in=concrete_integer_test_values).count() == 10
     assert (
-        IntegerTest.objects.generate_series([0, 9]).filter(term__in=Subquery(concrete_integer_test_values)).count()
+        generate_series(0, 9, output_field=models.BigIntegerField)
+        .filter(term__in=concrete_integer_test_values)
+        .count()
+        == 10
+    )
+    assert (
+        generate_series(0, 9, output_field=models.BigIntegerField)
+        .filter(term__in=Subquery(concrete_integer_test_values))
+        .count()
         == 10
     )
 
@@ -335,9 +296,45 @@ def test_decimal_model():
     for idx in range(0, 10):
         ConcreteDecimalTest.objects.create(some_field=idx)
 
+    # Run through some variations
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=models.DecimalField
+        ).count()
+        == 10
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("2.00"), output_field=models.DecimalField
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"),
+            decimal.Decimal("9.00"),
+            decimal.Decimal("2.00"),
+            include_id=True,
+            output_field=models.DecimalField,
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"),
+            decimal.Decimal("9.00"),
+            decimal.Decimal("2.00"),
+            include_id=True,
+            output_field=models.DecimalField,
+        )
+        .last()
+        .id
+        == 5
+    )
+
     # Make sure we can create a QuerySet and perform basic operations
-    decimal_test = DecimalTest.objects.generate_series(
-        [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
+    decimal_test = generate_series(
+        decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=models.DecimalField
     )
     assert decimal_test.count() == 10
     assert decimal_test.first().term == decimal.Decimal("0.00")
@@ -375,16 +372,16 @@ def test_decimal_model():
     # Check that we can query from the generate series model
     concrete_decimal_test_values = ConcreteDecimalTest.objects.values("some_field")
     assert (
-        DecimalTest.objects.generate_series(
-            [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=models.DecimalField
         )
         .filter(term__in=concrete_decimal_test_values)
         .count()
         == 10
     )
     assert (
-        DecimalTest.objects.generate_series(
-            [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=models.DecimalField
         )
         .filter(term__in=Subquery(concrete_decimal_test_values))
         .count()
@@ -401,11 +398,27 @@ def test_date_model():
     for idx in date_sequence:
         ConcreteDateTest.objects.create(some_field=idx)
 
+    # Run through some variations
+    assert generate_series(date_sequence[0], date_sequence[-1], "1 days", output_field=models.DateField).count() == 10
+    assert generate_series(date_sequence[0], date_sequence[-1], "2 days", output_field=models.DateField).count() == 5
+    assert (
+        generate_series(
+            date_sequence[0], date_sequence[-1], "2 days", include_id=True, output_field=models.DateField
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(date_sequence[0], date_sequence[-1], "2 days", include_id=True, output_field=models.DateField)
+        .last()
+        .id
+        == 5
+    )
+
     # Make sure we can create a QuerySet and perform basic operations
-    date_test = DateTest.objects.generate_series([date_sequence[0], date_sequence[-1], "1 days"])
+    date_test = generate_series(date_sequence[0], date_sequence[-1], "1 days", output_field=models.DateField)
     assert date_test.count() == 10
-    assert date_test.first().term.date() == date_sequence[0]
-    assert date_test.last().term.date() == date_sequence[-1]
+    assert date_test.first().term == date_sequence[0]
+    assert date_test.last().term == date_sequence[-1]
     date_test_sum = date_test.aggregate(int_sum=Count("term"))
     assert date_test_sum["int_sum"] == 10
 
@@ -422,8 +435,8 @@ def test_date_model():
         .filter(val__isnull=False)
     )
     assert subquery_test.count() == 10
-    assert subquery_test.first().val.date() == date_sequence[0]
-    assert subquery_test.last().val.date() == date_sequence[-1]
+    assert subquery_test.first().val == date_sequence[0]
+    assert subquery_test.last().val == date_sequence[-1]
 
     subquery_exists_test = ConcreteDateTest.objects.all().annotate(
         date_test=Exists(date_test.filter(term=OuterRef("some_field")))
@@ -438,13 +451,13 @@ def test_date_model():
     # Check that we can query from the generate series model
     concrete_date_test_values = ConcreteDateTest.objects.values("some_field")
     assert (
-        DateTest.objects.generate_series([date_sequence[0], date_sequence[-1], "1 days"])
+        generate_series(date_sequence[0], date_sequence[-1], "1 days", output_field=models.DateField)
         .filter(term__in=concrete_date_test_values)
         .count()
         == 10
     )
     assert (
-        DateTest.objects.generate_series([date_sequence[0], date_sequence[-1], "1 days"])
+        generate_series(date_sequence[0], date_sequence[-1], "1 days", output_field=models.DateField)
         .filter(term__in=Subquery(concrete_date_test_values))
         .count()
         == 10
@@ -457,11 +470,43 @@ def test_datetime_model():
 
     # Create concrete instances
     datetime_sequence = tuple(get_datetime_sequence())
+    print(datetime_sequence)
+
     for idx in datetime_sequence:
         ConcreteDateTimeTest.objects.create(some_field=idx)
 
+    # Run through some variations
+    assert (
+        generate_series(
+            datetime_sequence[0], datetime_sequence[-1], "1 days", output_field=models.DateTimeField
+        ).count()
+        == 10
+    )
+    assert (
+        generate_series(
+            datetime_sequence[0], datetime_sequence[-1], "2 days", output_field=models.DateTimeField
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            datetime_sequence[0], datetime_sequence[-1], "2 days", include_id=True, output_field=models.DateTimeField
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            datetime_sequence[0], datetime_sequence[-1], "2 days", include_id=True, output_field=models.DateTimeField
+        )
+        .last()
+        .id
+        == 5
+    )
+
     # Make sure we can create a QuerySet and perform basic operations
-    datetime_test = DateTimeTest.objects.generate_series([datetime_sequence[0], datetime_sequence[-1], "1 days"])
+    datetime_test = generate_series(
+        datetime_sequence[0], datetime_sequence[-1], "1 days", output_field=models.DateTimeField
+    )
     assert datetime_test.count() == 10
     assert datetime_test.first().term == datetime_sequence[0]
     assert datetime_test.last().term == datetime_sequence[-1]
@@ -497,13 +542,13 @@ def test_datetime_model():
     # Check that we can query from the generate series model
     concrete_datetime_test_values = ConcreteDateTimeTest.objects.values("some_field")
     assert (
-        DateTimeTest.objects.generate_series([datetime_sequence[0], datetime_sequence[-1], "1 days"])
+        generate_series(datetime_sequence[0], datetime_sequence[-1], "1 days", output_field=models.DateTimeField)
         .filter(term__in=concrete_datetime_test_values)
         .count()
         == 10
     )
     assert (
-        DateTimeTest.objects.generate_series([datetime_sequence[0], datetime_sequence[-1], "1 days"])
+        generate_series(datetime_sequence[0], datetime_sequence[-1], "1 days", output_field=models.DateTimeField)
         .filter(term__in=Subquery(concrete_datetime_test_values))
         .count()
         == 10
@@ -519,8 +564,14 @@ def test_integer_range_model():
     for item in integer_range_sequence:
         x = ConcreteIntegerRangeTest.objects.create(some_field=item)
 
+    # Run through some variations
+    assert generate_series(0, 9, output_field=IntegerRangeField).count() == 10
+    assert generate_series(0, 9, 2, output_field=IntegerRangeField).count() == 5
+    assert generate_series(0, 9, 2, include_id=True, output_field=IntegerRangeField).count() == 5
+    assert generate_series(0, 9, 2, include_id=True, output_field=IntegerRangeField).last().id == 5
+
     # Make sure we can create a QuerySet and perform basic operations
-    integer_range_test = IntegerRangeTest.objects.generate_series([0, 9])
+    integer_range_test = generate_series(0, 9, output_field=IntegerRangeField)
 
     integer_range_test.first().term
     assert integer_range_test.count() == 10
@@ -535,7 +586,7 @@ def test_integer_range_model():
 
     assert integer_range_test.filter(term__contains=NumericRange(1, 2)).count() == 1
 
-    # # Check that we can query from the concrete model
+    # Check that we can query from the concrete model
     assert ConcreteIntegerRangeTest.objects.filter(some_field__in=integer_range_test.values("term")).count() == 10
     assert (
         ConcreteIntegerRangeTest.objects.filter(some_field__in=Subquery(integer_range_test.values("term"))).count()
@@ -572,11 +623,13 @@ def test_integer_range_model():
     # # Check that we can query from the generate series model
     concrete_integer_range_test_values = ConcreteIntegerRangeTest.objects.values("some_field")
     assert (
-        IntegerRangeTest.objects.generate_series([0, 9]).filter(term__in=concrete_integer_range_test_values).count()
+        generate_series(0, 9, output_field=IntegerRangeField)
+        .filter(term__in=concrete_integer_range_test_values)
+        .count()
         == 10
     )
     assert (
-        IntegerRangeTest.objects.generate_series([0, 9])
+        generate_series(0, 9, output_field=IntegerRangeField)
         .filter(term__in=Subquery(concrete_integer_range_test_values))
         .count()
         == 10
@@ -595,13 +648,47 @@ def test_decimal_range_model():
     for item in decimal_range_sequence:
         ConcreteDecimalRangeTest.objects.create(some_field=item)
 
-    # Make sure we can create a QuerySet and perform basic operations
-    decimal_range_test = DecimalRangeTest.objects.generate_series(
-        [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
+    # Run through some variations
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=DecimalRangeField
+        ).count()
+        == 10
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("2.00"), output_field=DecimalRangeField
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"),
+            decimal.Decimal("9.00"),
+            decimal.Decimal("2.00"),
+            include_id=True,
+            output_field=DecimalRangeField,
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("0.00"),
+            decimal.Decimal("9.00"),
+            decimal.Decimal("2.00"),
+            include_id=True,
+            output_field=DecimalRangeField,
+        )
+        .last()
+        .id
+        == 5
     )
 
+    # Make sure we can create a QuerySet and perform basic operations
+    decimal_range_test = generate_series(
+        decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=DecimalRangeField
+    )
     assert decimal_range_test.count() == 10
-
     assert decimal_range_test.first().term == decimal_range_sequence[0]
     assert decimal_range_test.last().term == decimal_range_sequence[-1]
     decimal_range_test_sum = decimal_range_test.aggregate(int_sum=Count("term"))
@@ -655,16 +742,16 @@ def test_decimal_range_model():
     # Check that we can query from the generate series model
     concrete_decimal_range_test_values = ConcreteDecimalRangeTest.objects.values("some_field")
     assert (
-        DecimalRangeTest.objects.generate_series(
-            [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=DecimalRangeField
         )
         .filter(term__in=concrete_decimal_range_test_values)
         .count()
         == 10
     )
     assert (
-        DecimalRangeTest.objects.generate_series(
-            [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
+        generate_series(
+            decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00"), output_field=DecimalRangeField
         )
         .filter(term__in=Subquery(concrete_decimal_range_test_values))
         .count()
@@ -689,11 +776,55 @@ def test_date_range_model():
     for idx in date_range_sequence:
         ConcreteDateRangeTest.objects.create(some_field=idx)
 
-    # Make sure we can create a QuerySet and perform basic operations
-    date_range_test = DateRangeTest.objects.generate_series(
-        [timezone.now().date(), timezone.now().date() + timezone.timedelta(days=9), "1 days"]
+    # Run through some variations
+    assert (
+        generate_series(
+            timezone.now().date(),
+            timezone.now().date() + timezone.timedelta(days=10),
+            "1 days",
+            output_field=DateRangeField,
+        ).count()
+        == 10
+    )
+    assert (
+        generate_series(
+            timezone.now().date(),
+            timezone.now().date() + timezone.timedelta(days=10),
+            "2 days",
+            output_field=DateRangeField,
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            timezone.now().date(),
+            timezone.now().date() + timezone.timedelta(days=10),
+            "2 days",
+            include_id=True,
+            output_field=DateRangeField,
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            timezone.now().date(),
+            timezone.now().date() + timezone.timedelta(days=10),
+            "2 days",
+            include_id=True,
+            output_field=DateRangeField,
+        )
+        .last()
+        .id
+        == 5
     )
 
+    # Make sure we can create a QuerySet and perform basic operations
+    date_range_test = generate_series(
+        timezone.now().date(),
+        timezone.now().date() + timezone.timedelta(days=9),
+        "1 days",
+        output_field=DateRangeField,
+    )
     assert date_range_test.count() == 9
     assert date_range_test.first().term == date_range_sequence[0]
     assert date_range_test.last().term == date_range_sequence[-1]
@@ -731,16 +862,22 @@ def test_date_range_model():
     # Check that we can query from the generate series model
     concrete_date_range_test_values = ConcreteDateRangeTest.objects.values("some_field")
     assert (
-        DateRangeTest.objects.generate_series(
-            [timezone.now().date(), timezone.now().date() + timezone.timedelta(days=9), "1 days"]
+        generate_series(
+            timezone.now().date(),
+            timezone.now().date() + timezone.timedelta(days=9),
+            "1 days",
+            output_field=DateRangeField,
         )
         .filter(term__in=concrete_date_range_test_values)
         .count()
         == 9
     )
     assert (
-        DateRangeTest.objects.generate_series(
-            [timezone.now().date(), timezone.now().date() + timezone.timedelta(days=9), "1 days"]
+        generate_series(
+            timezone.now().date(),
+            timezone.now().date() + timezone.timedelta(days=9),
+            "1 days",
+            output_field=DateRangeField,
         )
         .filter(term__in=Subquery(concrete_date_range_test_values))
         .count()
@@ -768,8 +905,52 @@ def test_datetime_range_model():
     for idx in datetime_range_sequence:
         x = ConcreteDateTimeRangeTest.objects.create(some_field=idx)
 
+    # Run through some variations
+    assert (
+        generate_series(
+            timezone.now(),
+            timezone.now() + timezone.timedelta(days=10),
+            "1 days",
+            output_field=DateTimeRangeField,
+        ).count()
+        == 10
+    )
+    assert (
+        generate_series(
+            timezone.now(),
+            timezone.now() + timezone.timedelta(days=10),
+            "2 days",
+            output_field=DateTimeRangeField,
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            timezone.now(),
+            timezone.now() + timezone.timedelta(days=10),
+            "2 days",
+            include_id=True,
+            output_field=DateTimeRangeField,
+        ).count()
+        == 5
+    )
+    assert (
+        generate_series(
+            timezone.now(),
+            timezone.now() + timezone.timedelta(days=10),
+            "2 days",
+            include_id=True,
+            output_field=DateTimeRangeField,
+        )
+        .last()
+        .id
+        == 5
+    )
+
     # Make sure we can create a QuerySet and perform basic operations
-    datetime_range_test = DateTimeRangeTest.objects.generate_series([first_dt_in_range, last_dt_in_range, "1 days"])
+    datetime_range_test = generate_series(
+        first_dt_in_range, last_dt_in_range, "1 days", output_field=DateTimeRangeField
+    )
 
     assert datetime_range_test.count() == 9
 
@@ -817,16 +998,22 @@ def test_datetime_range_model():
     # Check that we can query from the generate series model
     concrete_datetime_range_test_values = ConcreteDateTimeRangeTest.objects.values("some_field")
     assert (
-        DateTimeRangeTest.objects.generate_series(
-            [datetime_range_sequence[0].lower, datetime_range_sequence[-1].upper, "1 days"]
+        generate_series(
+            datetime_range_sequence[0].lower,
+            datetime_range_sequence[-1].upper,
+            "1 days",
+            output_field=DateTimeRangeField,
         )
         .filter(term__in=concrete_datetime_range_test_values)
         .count()
         == 9
     )
     assert (
-        DateTimeRangeTest.objects.generate_series(
-            [datetime_range_sequence[0].lower, datetime_range_sequence[-1].upper, "1 days"]
+        generate_series(
+            datetime_range_sequence[0].lower,
+            datetime_range_sequence[-1].upper,
+            "1 days",
+            output_field=DateTimeRangeField,
         )
         .filter(term__in=Subquery(concrete_datetime_range_test_values))
         .count()
