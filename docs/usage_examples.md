@@ -498,7 +498,7 @@ Here we create 10 buckets with a step and span of 5, from 1 to 50.
 
 ```python
 datetime_range_sequence = (
-    generate_series(1, 50, 5, 5, output_field=IntegerRangeField)
+    generate_series(0, 49, 5, 5, output_field=IntegerRangeField)
     .annotate(ticket_quantities=Subquery(event_subquery))
     .order_by("term")
 )
@@ -540,7 +540,7 @@ FROM
     SELECT
       int4range(a, a + 5) AS term
     FROM
-      generate_series(1, 49, 5) a
+      generate_series(0, 49, 5) a
   ) AS django_generate_series_integerrangefieldseries
 ORDER BY
   "django_generate_series_integerrangefieldseries"."term" ASC;
