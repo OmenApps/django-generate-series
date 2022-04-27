@@ -2,6 +2,7 @@ import decimal
 from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
+from functools import lru_cache
 from typing import List, Optional, Type, Union
 
 import django
@@ -91,197 +92,198 @@ class GenerateSeriesQuerySet(NoEffectQuerySet):
         return r
 
 
-class GenerateSeriesManager(NoEffectManager):
-    """Custom manager for creating series"""
+class FromRaw:
+    def __init__(self, model: AbstractBaseSeriesModel = None, params: Params = None):
+        self.term = type(model._meta.get_field("term"))
+        self.params = params
+        self.range = False
+        self.field_type = int
 
-    class FromRaw:
-        def __init__(self, model: AbstractBaseSeriesModel = None, params: Params = None):
-            self.term = type(model._meta.get_field("term"))
-            self.params = params
-            self.range = False
-            self.field_type = int
+        # Verify the input params match for the type of model field used
 
-            # Verify the input params match for the type of model field used
+        if issubclass(self.term, (models.DecimalField, pg_models.DecimalRangeField)):
+            self.check_params(
+                start_type=[int, Decimal],
+                stop_type=[int, Decimal],
+                step_type=[int, Decimal],
+            )
+            self.field_type = decimal.Decimal
 
-            if issubclass(self.term, (models.DecimalField, pg_models.DecimalRangeField)):
-                self.check_params(
-                    start_type=[int, Decimal],
-                    stop_type=[int, Decimal],
-                    step_type=[int, Decimal],
-                )
-                self.field_type = decimal.Decimal
+        elif issubclass(self.term, (models.DateField, pg_models.DateRangeField)):
+            self.check_params(
+                start_type=[date],
+                stop_type=[date],
+                step_type=[str],
+            )
+            self.field_type = datetime.date
 
-            elif issubclass(self.term, (models.DateField, pg_models.DateRangeField)):
-                self.check_params(
-                    start_type=[date],
-                    stop_type=[date],
-                    step_type=[str],
-                )
-                self.field_type = datetime.date
+        elif issubclass(self.term, (models.DateTimeField, pg_models.DateTimeRangeField)):
+            self.check_params(
+                start_type=[datetime, datetimetz],
+                stop_type=[datetime, datetimetz],
+                step_type=[str],
+            )
+            self.field_type = datetimetz
 
-            elif issubclass(self.term, (models.DateTimeField, pg_models.DateTimeRangeField)):
-                self.check_params(
-                    start_type=[datetime, datetimetz],
-                    stop_type=[datetime, datetimetz],
-                    step_type=[str],
-                )
-                self.field_type = datetimetz
+        elif issubclass(
+            self.term,
+            (
+                models.BigIntegerField,
+                models.IntegerField,
+                pg_models.BigIntegerRangeField,
+                pg_models.IntegerRangeField,
+            ),
+        ):
+            self.check_params(
+                start_type=[int],
+                stop_type=[int],
+                step_type=[int],
+            )
 
-            elif issubclass(
-                self.term,
-                (
-                    models.BigIntegerField,
-                    models.IntegerField,
-                    pg_models.BigIntegerRangeField,
-                    pg_models.IntegerRangeField,
-                ),
-            ):
-                self.check_params(
-                    start_type=[int],
-                    stop_type=[int],
-                    step_type=[int],
-                )
+            if issubclass(self.term, (models.BigIntegerField, pg_models.BigIntegerRangeField)):
+                self.field_type = "BigInteger"  # ToDo: Find a better way to standarize self.field_type
 
-                if issubclass(self.term, (models.BigIntegerField, pg_models.BigIntegerRangeField)):
-                    self.field_type = "BigInteger"  # ToDo: Find a better way to standarize self.field_type
+        else:
+            raise ModelFieldNotSupported("Invalid model field type used to generate series")
 
-            else:
-                raise ModelFieldNotSupported("Invalid model field type used to generate series")
+        if issubclass(
+            self.term,
+            (
+                pg_models.BigIntegerRangeField,
+                pg_models.IntegerRangeField,
+                pg_models.DecimalRangeField,
+                pg_models.DateRangeField,
+                pg_models.DateTimeRangeField,
+            ),
+        ):
+            self.range = True
 
-            if issubclass(
-                self.term,
-                (
-                    pg_models.BigIntegerRangeField,
-                    pg_models.IntegerRangeField,
-                    pg_models.DecimalRangeField,
-                    pg_models.DateRangeField,
-                    pg_models.DateTimeRangeField,
-                ),
-            ):
-                self.range = True
+        self.raw_query = f"({self.get_raw_query()})"
 
-            self.raw_query = f"({self.get_raw_query()})"
+    def get_raw_query(self):
+        if self.range:
 
-        def get_raw_query(self):
-            if self.range:
-
-                if self.field_type is datetimetz:
-                    sql = """
-                        SELECT
-                            row_number() over () as id,
-                            "term"
-                        FROM
-                            (
-                                SELECT tstzrange((lag(a) OVER()), a, '[)') AS term
-                                FROM generate_series(timestamptz %s, timestamptz %s, interval %s)
-                                AS a OFFSET 1
-                            ) AS subquery
-                    """
-                elif self.field_type == datetime.date:
-                    sql = """
-                        SELECT
-                            row_number() over () as id,
-                            "term"
-                        FROM
-                            (
-                                SELECT daterange((lag(a.n) OVER()), a.n, '[)') AS term
-                                FROM (
-                                    SELECT generate_series(date %s, date %s, interval %s)::date
-                                    AS n)
-                                AS a OFFSET 1
-                            ) AS seriesquery
-                    """
-                elif self.field_type is decimal.Decimal:
-                    sql = """
-                        SELECT
-                            row_number() over () as id,
-                            "term"
-                        FROM
-                            (
-                                SELECT numrange(a, a + 1) AS term
-                                FROM generate_series(%s, %s, %s) a
-                            ) AS seriesquery
-                    """
-                elif self.field_type == "BigInteger":
-                    sql = """
-                        SELECT
-                            row_number() over () as id,
-                            "term"
-                        FROM
-                            (
-                                SELECT int8range(a, a + 1) AS term
-                                FROM generate_series(%s, %s, %s) a
-                            ) AS subquery
-                    """
-                else:
-                    # ToDo: Instead of `a + 1`, we could make possible other options as well
-                    sql = """
-                        SELECT
-                            row_number() over () as id,
-                            "term"
-                        FROM
-                            (
-                                SELECT int4range(a, a + 1) AS term
-                                FROM generate_series(%s, %s, %s) a
-                            ) AS seriesquery
-                    """
-            else:
+            if self.field_type is datetimetz:
                 sql = """
                     SELECT
                         row_number() over () as id,
                         "term"
                     FROM
                         (
-                        SELECT
-                            generate_series(%s, %s, %s) term
+                            SELECT tstzrange((lag(a) OVER()), a, '[)') AS term
+                            FROM generate_series(timestamptz %s, timestamptz %s, interval %s)
+                            AS a OFFSET 1
+                        ) AS subquery
+                """
+            elif self.field_type == datetime.date:
+                sql = """
+                    SELECT
+                        row_number() over () as id,
+                        "term"
+                    FROM
+                        (
+                            SELECT daterange((lag(a.n) OVER()), a.n, '[)') AS term
+                            FROM (
+                                SELECT generate_series(date %s, date %s, interval %s)::date
+                                AS n)
+                            AS a OFFSET 1
                         ) AS seriesquery
                 """
+            elif self.field_type is decimal.Decimal:
+                sql = """
+                    SELECT
+                        row_number() over () as id,
+                        "term"
+                    FROM
+                        (
+                            SELECT numrange(a, a + 1) AS term
+                            FROM generate_series(%s, %s, %s) a
+                        ) AS seriesquery
+                """
+            elif self.field_type == "BigInteger":
+                sql = """
+                    SELECT
+                        row_number() over () as id,
+                        "term"
+                    FROM
+                        (
+                            SELECT int8range(a, a + 1) AS term
+                            FROM generate_series(%s, %s, %s) a
+                        ) AS subquery
+                """
+            else:
+                # ToDo: Instead of `a + 1`, we could make possible other options as well
+                sql = """
+                    SELECT
+                        row_number() over () as id,
+                        "term"
+                    FROM
+                        (
+                            SELECT int4range(a, a + 1) AS term
+                            FROM generate_series(%s, %s, %s) a
+                        ) AS seriesquery
+                """
+        else:
+            sql = """
+                SELECT
+                    row_number() over () as id,
+                    "term"
+                FROM
+                    (
+                    SELECT
+                        generate_series(%s, %s, %s) term
+                    ) AS seriesquery
+            """
 
-            return sql
+        return sql
 
-        def check_params(
-            self,
-            start_type: List[Union[Type[int], Type[decimal.Decimal], Type[date], Type[datetime], Type[datetimetz]]],
-            stop_type: List[Union[Type[int], Type[decimal.Decimal], Type[date], Type[datetime], Type[datetimetz]]],
-            step_type: List[Union[Type[int], Type[decimal.Decimal], Type[str]]],
-        ):
+    def check_params(
+        self,
+        start_type: List[Union[Type[int], Type[decimal.Decimal], Type[date], Type[datetime], Type[datetimetz]]],
+        stop_type: List[Union[Type[int], Type[decimal.Decimal], Type[date], Type[datetime], Type[datetimetz]]],
+        step_type: List[Union[Type[int], Type[decimal.Decimal], Type[str]]],
+    ):
 
-            # Check that `start`, `stop`, and `step` are the correct type
-            # if not any(issubclass(type(self.params.start), item) for item in start_type):
-            #     raise ValueError(f"Start type of {start_type} expected, but received type {type(self.params.start)}")
-            # if not any(issubclass(type(self.params.stop), item) for item in stop_type):
-            #     raise ValueError(f"Stop type of {stop_type} expected, but received type {type(self.params.stop)}")
-            # if self.params.step is not None and not any(
-            #     issubclass(type(self.params.step), item) for item in step_type
-            # ):
-            #     raise ValueError(f"Step type of {step_type} expected, but received type {type(self.params.step)}")
+        # Check that `start`, `stop`, and `step` are the correct type
+        # if not any(issubclass(type(self.params.start), item) for item in start_type):
+        #     raise ValueError(f"Start type of {start_type} expected, but received type {type(self.params.start)}")
+        # if not any(issubclass(type(self.params.stop), item) for item in stop_type):
+        #     raise ValueError(f"Stop type of {stop_type} expected, but received type {type(self.params.stop)}")
+        # if self.params.step is not None and not any(
+        #     issubclass(type(self.params.step), item) for item in step_type
+        # ):
+        #     raise ValueError(f"Step type of {step_type} expected, but received type {type(self.params.step)}")
 
-            # Check that stop is larger than start
-            if not self.params.start < self.params.stop:
-                raise ValueError(f"Start value must be smaller than stop value")
+        # Check that stop is larger than start
+        if not self.params.start < self.params.stop:
+            raise ValueError(f"Start value must be smaller than stop value")
 
-            # Only numeric series can use just `start` & `stop`. Other types also need `step`
-            if self.params.step is None and not isinstance(self.params.start, int):
-                raise Exception(f"Step must be provided for non-integer series")
+        # Only numeric series can use just `start` & `stop`. Other types also need `step`
+        if self.params.step is None and not isinstance(self.params.start, int):
+            raise Exception(f"Step must be provided for non-integer series")
 
-            # If step is a str, make sure it is formatted correctly
-            #   Starting with a numeric value, then a space, and then a valid interval unit
-            if isinstance(self.params.step, str):
-                try:
-                    interval, interval_unit = self.params.step.split()
-                except ValueError:
-                    raise Exception(
-                        "Incorrect number of values for series step string. "
-                        "Should be a numeric value, a space, and an interval type."
-                    )
+        # If step is a str, make sure it is formatted correctly
+        #   Starting with a numeric value, then a space, and then a valid interval unit
+        if isinstance(self.params.step, str):
+            try:
+                interval, interval_unit = self.params.step.split()
+            except ValueError:
+                raise Exception(
+                    "Incorrect number of values for series step string. "
+                    "Should be a numeric value, a space, and an interval type."
+                )
 
-                try:
-                    interval = float(interval)
-                except ValueError:
-                    raise ValueError("Invalid interval value. Must be capable of being converted to a numeric type.")
+            try:
+                interval = float(interval)
+            except ValueError:
+                raise ValueError("Invalid interval value. Must be capable of being converted to a numeric type.")
 
-                if not interval_unit in INTERVAL_UNITS:
-                    raise Exception("Invalid interval unit")
+            if not interval_unit in INTERVAL_UNITS:
+                raise Exception("Invalid interval unit")
+
+
+class GenerateSeriesManager(NoEffectManager):
+    """Custom manager for creating series"""
 
     # def generate_series(self, params: Params = None):
     def generate_series(self, params: Union[tuple, list, Params] = None):
@@ -293,7 +295,7 @@ class GenerateSeriesManager(NoEffectManager):
         # def series_func(cls, *args):
         def series_func(cls):
             model = self.model
-            return self.FromRaw(model, params)
+            return FromRaw(model, params)
 
         return GenerateSeriesQuerySet(self.model, using=self._db, _series_func=series_func, _series_func_params=params)
 
@@ -360,3 +362,75 @@ def get_series_model(
             managed = False
 
     return SeriesModel
+
+
+class SeriesModel(AbstractBaseSeriesModel):
+    objects = GenerateSeriesManager()
+
+    class Meta:
+        abstract = True
+        managed = False
+
+
+def generate_series(
+    start,
+    stop,
+    step=None,
+    include_id=False,
+    *,
+    output_field: type[models.Field],
+    max_digits: Optional[Union[int, None]] = None,
+    decimal_places: Optional[Union[int, None]] = None,
+    default_bounds: Optional[Union[str, None]] = None,
+):
+    model_class = _make_model_class(output_field, include_id, max_digits, decimal_places, default_bounds)
+
+    # ToDo: Modify this return to remove the list wrapping and to include the include_id argument
+    return model_class.objects.generate_series([start, stop, step])
+
+
+# @lru_cache(maxsize=128)
+def _make_model_class(output_field, include_id, max_digits, decimal_places, default_bounds):
+    model_dict = {
+        "Meta": type("Meta", (object,), {"managed": False}),
+        "__module__": __name__,
+    }
+    term_dict = {}
+
+    if include_id:
+        model_dict["id"] = models.BigAutoField(primary_key=True)
+    else:
+        term_dict["primary_key"] = True
+
+    if (
+        issubclass(
+            output_field,
+            (
+                pg_models.DecimalRangeField,
+                pg_models.DateRangeField,
+                pg_models.DateTimeRangeField,
+            ),
+        )
+        and django.VERSION >= (4, 1)
+        and default_bounds is not None
+    ):
+        # Versions of Django > 4.1 include support for defining default range bounds for
+        #   Range fields other than those based on Integer, so use it if provided.
+        term_dict["default_bounds"] = default_bounds
+
+    elif issubclass(output_field, models.DecimalField):  # Do we need to check for DecimalRangeField as well?
+        term_dict["max_digits"] = max_digits
+        term_dict["decimal_places"] = decimal_places
+
+    model_dict["term"] = output_field(**term_dict)
+
+    # for key, value in model_dict.items():
+    #     print(f"\nkey: {key}, value: {value}")
+
+    # print(f"\nmodel_dict: {model_dict}")
+
+    return type(
+        f"{output_field.__name__}Series",
+        (SeriesModel,),
+        model_dict,
+    )
