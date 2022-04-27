@@ -6,7 +6,6 @@ from typing import List, Optional, Type, Union
 
 import django
 from django.contrib.postgres import fields as pg_models
-from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import Field
 from django.db.models.sql import Query
@@ -97,14 +96,14 @@ class GenerateSeriesManager(NoEffectManager):
 
     class FromRaw:
         def __init__(self, model: AbstractBaseSeriesModel = None, params: Params = None):
-            self.id = type(model._meta.get_field("id"))
+            self.term = type(model._meta.get_field("term"))
             self.params = params
             self.range = False
             self.field_type = int
 
             # Verify the input params match for the type of model field used
 
-            if issubclass(self.id, (models.DecimalField, pg_models.DecimalRangeField)):
+            if issubclass(self.term, (models.DecimalField, pg_models.DecimalRangeField)):
                 self.check_params(
                     start_type=[int, Decimal],
                     stop_type=[int, Decimal],
@@ -112,7 +111,7 @@ class GenerateSeriesManager(NoEffectManager):
                 )
                 self.field_type = decimal.Decimal
 
-            elif issubclass(self.id, (models.DateField, pg_models.DateRangeField)):
+            elif issubclass(self.term, (models.DateField, pg_models.DateRangeField)):
                 self.check_params(
                     start_type=[date],
                     stop_type=[date],
@@ -120,7 +119,7 @@ class GenerateSeriesManager(NoEffectManager):
                 )
                 self.field_type = datetime.date
 
-            elif issubclass(self.id, (models.DateTimeField, pg_models.DateTimeRangeField)):
+            elif issubclass(self.term, (models.DateTimeField, pg_models.DateTimeRangeField)):
                 self.check_params(
                     start_type=[datetime, datetimetz],
                     stop_type=[datetime, datetimetz],
@@ -129,7 +128,7 @@ class GenerateSeriesManager(NoEffectManager):
                 self.field_type = datetimetz
 
             elif issubclass(
-                self.id,
+                self.term,
                 (
                     models.BigIntegerField,
                     models.IntegerField,
@@ -143,14 +142,14 @@ class GenerateSeriesManager(NoEffectManager):
                     step_type=[int],
                 )
 
-                if issubclass(self.id, (models.BigIntegerField, pg_models.BigIntegerRangeField)):
+                if issubclass(self.term, (models.BigIntegerField, pg_models.BigIntegerRangeField)):
                     self.field_type = "BigInteger"  # ToDo: Find a better way to standarize self.field_type
 
             else:
                 raise ModelFieldNotSupported("Invalid model field type used to generate series")
 
             if issubclass(
-                self.id,
+                self.term,
                 (
                     pg_models.BigIntegerRangeField,
                     pg_models.IntegerRangeField,
@@ -167,44 +166,76 @@ class GenerateSeriesManager(NoEffectManager):
             if self.range:
 
                 if self.field_type is datetimetz:
-                    ### WORKING!!
                     sql = """
-                        SELECT tstzrange((lag(a) OVER()), a, '[)') AS id
-                            FROM generate_series(timestamptz %s, timestamptz %s, interval %s)
-                            AS a OFFSET 1
+                        SELECT
+                            row_number() over () as id,
+                            "term"
+                        FROM
+                            (
+                                SELECT tstzrange((lag(a) OVER()), a, '[)') AS term
+                                FROM generate_series(timestamptz %s, timestamptz %s, interval %s)
+                                AS a OFFSET 1
+                            ) AS subquery
                     """
                 elif self.field_type == datetime.date:
-
-                    # Fix this one (working, but not optimal?):
-
                     sql = """
-                        SELECT daterange((lag(a.n) OVER()), a.n, '[)') AS id
-                        FROM (
-                            SELECT generate_series(date %s, date %s, interval %s)::date
-                            AS n)
-                        AS a OFFSET 1
+                        SELECT
+                            row_number() over () as id,
+                            "term"
+                        FROM
+                            (
+                                SELECT daterange((lag(a.n) OVER()), a.n, '[)') AS term
+                                FROM (
+                                    SELECT generate_series(date %s, date %s, interval %s)::date
+                                    AS n)
+                                AS a OFFSET 1
+                            ) AS seriesquery
                     """
                 elif self.field_type is decimal.Decimal:
                     sql = """
-                        SELECT numrange(a, a + 1) AS id
-	                        FROM generate_series(%s, %s, %s) a
+                        SELECT
+                            row_number() over () as id,
+                            "term"
+                        FROM
+                            (
+                                SELECT numrange(a, a + 1) AS term
+                                FROM generate_series(%s, %s, %s) a
+                            ) AS seriesquery
                     """
                 elif self.field_type == "BigInteger":
                     sql = """
-                       SELECT int8range(a, a + 1) AS id
-                        FROM generate_series(%s, %s, %s) a
+                        SELECT
+                            row_number() over () as id,
+                            "term"
+                        FROM
+                            (
+                                SELECT int8range(a, a + 1) AS term
+                                FROM generate_series(%s, %s, %s) a
+                            ) AS subquery
                     """
                 else:
-                    ### WORKING !!
-                    # ToDo: Instead of `a + 1`, we could make possible other options as well?
+                    # ToDo: Instead of `a + 1`, we could make possible other options as well
                     sql = """
-                        SELECT int4range(a, a + 1) AS id
-                        FROM generate_series(%s, %s, %s) a
+                        SELECT
+                            row_number() over () as id,
+                            "term"
+                        FROM
+                            (
+                                SELECT int4range(a, a + 1) AS term
+                                FROM generate_series(%s, %s, %s) a
+                            ) AS seriesquery
                     """
             else:
-                sql = "SELECT generate_series(%s, %s, %s) id"
-
-            # print(f"self.range: {self.range}, self.field_type: {self.field_type}, Using sql: {sql}")
+                sql = """
+                    SELECT
+                        row_number() over () as id,
+                        "term"
+                    FROM
+                        (
+                        SELECT
+                            generate_series(%s, %s, %s) term
+                        ) AS seriesquery
+                """
 
             return sql
 
@@ -312,16 +343,15 @@ def get_series_model(
         ):
             # Versions of Django > 4.1 include support for defining default range bounds for
             #   Range fields other than those based on Integer, so use it if provided.
-            id = model_field(primary_key=True, default_bounds=default_bounds)
+            term = model_field(default_bounds=default_bounds)
 
         elif issubclass(model_field, models.DecimalField):
-            id = model_field(
-                primary_key=True,
+            term = model_field(
                 max_digits=max_digits,
                 decimal_places=decimal_places,
             )
         else:
-            id = model_field(primary_key=True)
+            term = model_field()
 
         objects = GenerateSeriesManager()
 

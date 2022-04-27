@@ -8,31 +8,34 @@ Generate a sequence of every third integer from -12 to 12.
 integer_sequence = IntegerTest.objects.generate_series([-12, 13, 3])
 
 for item in integer_sequence:
-    print(item.id)
+    print(item.id, item.term)
 
 """ Example:
-    -12
-    -9
-    -6
-    -3
-    0
-    3
-    6
-    9
-    12
+    1 -12
+    2 -9
+    3 -6
+    4 -3
+    5 0
+    6 3
+    7 6
+    8 9
+    9 12
 """
 ```
 
 Resulting SQL
 
 ```sql
-SELECT
-  "core_integertest"."id"
-FROM
-  (
+SELECT "core_integertest"."id", "core_integertest"."term" FROM (
     SELECT
-      generate_series(-12, 13, 3) id
-  ) AS core_integertest;
+        row_number() over () as id,
+        "term"
+    FROM
+        (
+        SELECT
+            generate_series( -12, 13, 3) term
+        ) AS seriesquery
+) AS core_integertest;
 ```
 
 ## Example with decimals
@@ -45,34 +48,36 @@ import decimal
 decimal_sequence = DecimalTest.objects.generate_series(
     [decimal.Decimal("0.000"), decimal.Decimal("10.000"), decimal.Decimal("1.234")]
 )
-decimal_sequence.first().id
 
 for item in decimal_sequence:
-    print(item.id)
+    print(item.id, item.term)
 
 """ Example:
-    0.000
-    1.234
-    2.468
-    3.702
-    4.936
-    6.170
-    7.404
-    8.638
-    9.872
+    1 0.000
+    2 1.234
+    3 2.468
+    4 3.702
+    5 4.936
+    6 6.170
+    7 7.404
+    8 8.638
+    9 9.872
 """
 ```
 
 Resulting SQL
 
 ```sql
-SELECT
-  "core_decimaltest"."id"
-FROM
-  (
+SELECT "core_decimaltest"."id", "core_decimaltest"."term" FROM (
     SELECT
-      generate_series(0.000, 10.000, 1.234) id
-  ) AS core_decimaltest;
+        row_number() over () as id,
+        "term"
+    FROM
+        (
+        SELECT
+            generate_series(0.000, 10.000, 1.234) term
+        ) AS seriesquery
+) AS core_decimaltest;
 ```
 
 ## Get summed costs for orders placed every other day over the past month
@@ -109,7 +114,7 @@ for x in range(0, 30):
 
 # Create a Subquery of annotated SimpleOrder objects
 simple_order_subquery = (
-    SimpleOrder.objects.filter(order_date=OuterRef("id"))
+    SimpleOrder.objects.filter(order_date=OuterRef("term"))
     .order_by()
     .values("order_date")
     .annotate(sum_of_cost=Sum("cost"))
@@ -131,60 +136,60 @@ for item in SimpleOrder.objects.order_by("order_date"):
 
 
 """ Example:
-    2022-03-30 12
-    2022-03-31 49
-    2022-03-31 28
-    2022-04-01 41
-    2022-04-02 22
-    2022-04-03 30
-    2022-04-03 29
-    2022-04-03 44
-    2022-04-03 15
-    2022-04-05 18
-    2022-04-05 47
-    2022-04-05 2
-    2022-04-05 30
-    2022-04-06 19
-    2022-04-08 39
-    2022-04-11 4
-    2022-04-11 31
-    2022-04-11 6
-    2022-04-11 31
-    2022-04-14 6
-    2022-04-15 35
-    2022-04-16 41
-    2022-04-18 15
-    2022-04-19 18
-    2022-04-19 19
-    2022-04-19 31
-    2022-04-19 36
-    2022-04-21 36
-    2022-04-22 1
-    2022-04-22 45
+    2022-03-28 3
+    2022-03-31 26
+    2022-04-01 16
+    2022-04-01 19
+    2022-04-02 19
+    2022-04-03 40
+    2022-04-05 29
+    2022-04-07 26
+    2022-04-07 48
+    2022-04-09 36
+    2022-04-09 24
+    2022-04-11 24
+    2022-04-12 29
+    2022-04-13 25
+    2022-04-14 43
+    2022-04-15 41
+    2022-04-15 30
+    2022-04-16 30
+    2022-04-18 6
+    2022-04-19 17
+    2022-04-20 41
+    2022-04-21 48
+    2022-04-23 19
+    2022-04-23 31
+    2022-04-23 24
+    2022-04-23 36
+    2022-04-23 45
+    2022-04-24 11
+    2022-04-24 20
+    2022-04-26 2
 """
 
 # Print out the date_sequence_queryset
 #    Remember this is the sum of order costs for every other day over the past month
 for item in date_sequence_queryset:
-    print(item.id, item.daily_order_costs)
+    print(item.term, item.daily_order_costs)
 
 """ Example:
-    2022-03-24 00:00:00+00:00 None
-    2022-03-26 00:00:00+00:00 None
-    2022-03-28 00:00:00+00:00 None
-    2022-03-30 00:00:00+00:00 12
-    2022-04-01 00:00:00+00:00 41
-    2022-04-03 00:00:00+00:00 118
-    2022-04-05 00:00:00+00:00 97
-    2022-04-07 00:00:00+00:00 None
-    2022-04-09 00:00:00+00:00 None
-    2022-04-11 00:00:00+00:00 72
-    2022-04-13 00:00:00+00:00 None
-    2022-04-15 00:00:00+00:00 35
+    2022-03-28 00:00:00+00:00 3
+    2022-03-30 00:00:00+00:00 None
+    2022-04-01 00:00:00+00:00 35
+    2022-04-03 00:00:00+00:00 40
+    2022-04-05 00:00:00+00:00 29
+    2022-04-07 00:00:00+00:00 74
+    2022-04-09 00:00:00+00:00 60
+    2022-04-11 00:00:00+00:00 24
+    2022-04-13 00:00:00+00:00 25
+    2022-04-15 00:00:00+00:00 71
     2022-04-17 00:00:00+00:00 None
-    2022-04-19 00:00:00+00:00 104
-    2022-04-21 00:00:00+00:00 36
-    2022-04-23 00:00:00+00:00 None
+    2022-04-19 00:00:00+00:00 17
+    2022-04-21 00:00:00+00:00 48
+    2022-04-23 00:00:00+00:00 155
+    2022-04-25 00:00:00+00:00 None
+    2022-04-27 00:00:00+00:00 None
 """
 ```
 
@@ -193,20 +198,27 @@ The resulting SQL would look something like
 ```sql
 SELECT
   "core_datetest"."id",
+  "core_datetest"."term",
   (
     SELECT
       SUM(U0."cost") AS "sum_of_cost"
     FROM
       "core_simpleorder" U0
     WHERE
-      U0."order_date" = "core_datetest"."id"
+      U0."order_date" = "core_datetest"."term"
     GROUP BY
       U0."order_date"
   ) AS "daily_order_costs"
 FROM
   (
     SELECT
-      generate_series('2022-03-24' :: date, '2022-04-23' :: date, '2 days') id
+      row_number() over () as id,
+      "term"
+    FROM
+      (
+        SELECT
+          generate_series('2022-03-28' :: date, '2022-04-27' :: date, '2 days') term
+      ) AS seriesquery
   ) AS core_datetest;
 ```
 
@@ -252,52 +264,52 @@ for item in Event.objects.all().order_by("event_datetime"):
     print(item.event_datetime, item.ticket_qty)
 
 """ Example (broken up by 7-day segments for clarity):
-    2022-04-26 04:45:31.036525+00:00 2
-    2022-04-27 09:54:52.036525+00:00 2
+    2022-04-28 14:27:42.986299+00:00 3
+    2022-04-29 16:58:27.986299+00:00 3
 
-    2022-05-01 23:50:20.036525+00:00 4
-    2022-05-07 09:09:30.036525+00:00 3
+    2022-05-05 11:34:05.986299+00:00 1
+    2022-05-06 23:06:52.986299+00:00 2
+    2022-05-10 12:08:59.986299+00:00 2
 
-    2022-05-09 07:00:31.036525+00:00 1
-    2022-05-10 09:20:25.036525+00:00 1
-    2022-05-13 16:51:43.036525+00:00 4
+    2022-05-13 23:51:26.986299+00:00 2
 
-    2022-05-15 05:59:32.036525+00:00 2
-    2022-05-19 21:01:29.036525+00:00 4
+    2022-05-18 06:53:05.986299+00:00 3
+    2022-05-18 20:22:20.986299+00:00 3
+    2022-05-24 21:28:06.986299+00:00 2
 
-    2022-05-22 15:16:09.036525+00:00 1
-    2022-05-23 14:39:58.036525+00:00 3
-    2022-05-27 14:47:12.036525+00:00 1
+    2022-05-26 03:34:56.986299+00:00 1
 
-    2022-05-30 05:08:26.036525+00:00 4
+    2022-06-01 06:15:13.986299+00:00 1
+    2022-06-03 15:44:08.986299+00:00 4
 
-    2022-06-11 20:21:58.036525+00:00 3
+    2022-06-08 13:28:02.986299+00:00 3
+    2022-06-12 14:09:17.986299+00:00 3
 
-    2022-06-13 08:56:58.036525+00:00 1
-    2022-06-14 16:43:50.036525+00:00 1
-    2022-06-16 14:21:21.036525+00:00 2
-    2022-06-17 17:11:16.036525+00:00 1
-    2022-06-18 14:56:16.036525+00:00 2
+    2022-06-17 14:44:59.986299+00:00 3
+    2022-06-19 16:25:02.986299+00:00 1
 
-    2022-06-19 07:59:22.036525+00:00 3
-    2022-06-20 14:42:50.036525+00:00 1
+    2022-06-25 22:49:32.986299+00:00 3
+    2022-06-26 11:07:40.986299+00:00 1
 
-    2022-07-02 10:20:46.036525+00:00 4
+    2022-06-30 10:22:05.986299+00:00 3
+    2022-06-30 21:38:59.986299+00:00 2
+    2022-07-03 15:04:01.986299+00:00 1
 
-    2022-07-04 01:33:01.036525+00:00 4
-    2022-07-05 06:14:31.036525+00:00 2
-    2022-07-05 20:57:33.036525+00:00 3
-    2022-07-07 05:08:14.036525+00:00 3
+    2022-07-07 13:08:58.986299+00:00 1
+    2022-07-07 18:41:42.986299+00:00 2
+    2022-07-09 18:21:40.986299+00:00 2
+    2022-07-11 20:32:52.986299+00:00 1
 
-    2022-07-11 09:02:26.036525+00:00 1
-    2022-07-12 02:12:02.036525+00:00 2
-    2022-07-12 12:16:11.036525+00:00 3
+    2022-07-16 22:46:10.986299+00:00 3
+    2022-07-17 05:00:04.986299+00:00 4
 
-    2022-07-22 17:08:46.036525+00:00 2
+    2022-07-20 11:40:06.986299+00:00 1
+    2022-07-23 12:53:13.986299+00:00 3
+    2022-07-24 21:33:46.986299+00:00 2
 """
 
 event_subquery = (
-    Event.objects.filter(event_datetime__contained_by=OuterRef("id"))
+    Event.objects.filter(event_datetime__contained_by=OuterRef("term"))
     .order_by()
     .values("false_field")
     .annotate(sum_of_tickets=Sum("ticket_qty"))
@@ -311,25 +323,25 @@ event_subquery = (
 datetime_range_sequence = (
     DateTimeRangeTest.objects.generate_series([now, later, "7 days"])
     .annotate(ticket_quantities=Subquery(event_subquery))
-    .order_by("id")
+    .order_by("term")
 )
 
 for item in datetime_range_sequence:
-    print(item.id, item.ticket_quantities)
+    print(item.term, item.ticket_quantities)
 
 """ Example:
-    [2022-04-24 03:15:08.036525+00:00, 2022-05-01 03:15:08.036525+00:00) 4
-    [2022-05-01 03:15:08.036525+00:00, 2022-05-08 03:15:08.036525+00:00) 7
-    [2022-05-08 03:15:08.036525+00:00, 2022-05-15 03:15:08.036525+00:00) 6
-    [2022-05-15 03:15:08.036525+00:00, 2022-05-22 03:15:08.036525+00:00) 6
-    [2022-05-22 03:15:08.036525+00:00, 2022-05-29 03:15:08.036525+00:00) 5
-    [2022-05-29 03:15:08.036525+00:00, 2022-06-05 03:15:08.036525+00:00) 4
-    [2022-06-05 03:15:08.036525+00:00, 2022-06-12 03:15:08.036525+00:00) 3
-    [2022-06-12 03:15:08.036525+00:00, 2022-06-19 03:15:08.036525+00:00) 7
-    [2022-06-19 03:15:08.036525+00:00, 2022-06-26 03:15:08.036525+00:00) 4
-    [2022-06-26 03:15:08.036525+00:00, 2022-07-03 03:15:08.036525+00:00) 4
-    [2022-07-03 03:15:08.036525+00:00, 2022-07-10 03:15:08.036525+00:00) 12
-    [2022-07-10 03:15:08.036525+00:00, 2022-07-17 03:15:08.036525+00:00) 6
+    [2022-04-27 01:39:19.986299+00:00, 2022-05-04 01:39:19.986299+00:00) 6
+    [2022-05-04 01:39:19.986299+00:00, 2022-05-11 01:39:19.986299+00:00) 5
+    [2022-05-11 01:39:19.986299+00:00, 2022-05-18 01:39:19.986299+00:00) 2
+    [2022-05-18 01:39:19.986299+00:00, 2022-05-25 01:39:19.986299+00:00) 8
+    [2022-05-25 01:39:19.986299+00:00, 2022-06-01 01:39:19.986299+00:00) 1
+    [2022-06-01 01:39:19.986299+00:00, 2022-06-08 01:39:19.986299+00:00) 5
+    [2022-06-08 01:39:19.986299+00:00, 2022-06-15 01:39:19.986299+00:00) 6
+    [2022-06-15 01:39:19.986299+00:00, 2022-06-22 01:39:19.986299+00:00) 4
+    [2022-06-22 01:39:19.986299+00:00, 2022-06-29 01:39:19.986299+00:00) 4
+    [2022-06-29 01:39:19.986299+00:00, 2022-07-06 01:39:19.986299+00:00) 6
+    [2022-07-06 01:39:19.986299+00:00, 2022-07-13 01:39:19.986299+00:00) 6
+    [2022-07-13 01:39:19.986299+00:00, 2022-07-20 01:39:19.986299+00:00) 7
 """
 ```
 
@@ -338,28 +350,34 @@ The resulting SQL would look something like
 ```sql
 SELECT
   "core_datetimerangetest"."id",
+  "core_datetimerangetest"."term",
   (
     SELECT
       SUM(U0."ticket_qty") AS "sum_of_tickets"
     FROM
       "core_event" U0
     WHERE
-      U0."event_datetime" <@ "core_datetimerangetest"."id" :: tstzrange
+      U0."event_datetime" <@ "core_datetimerangetest"."term" :: tstzrange
     GROUP BY
       U0."false_field"
   ) AS "ticket_quantities"
 FROM
   (
     SELECT
-      tstzrange((lag(a) OVER()), a, '[)') AS id
+      row_number() over () as id,
+      "term"
     FROM
-      generate_series(
-        timestamptz '2022-04-24T03:15:08.036525+00:00' :: timestamptz,
-        timestamptz '2022-07-23T03:15:08.036525+00:00' :: timestamptz,
-        interval '7 days'
-      ) AS a OFFSET 1
+      (
+        SELECT
+          tstzrange((lag(a) OVER()), a, '[)') AS term
+        FROM
+          generate_series(
+            timestamptz '2022-04-27T01:39:19.986299+00:00' :: timestamptz,
+            timestamptz '2022-07-26T01:39:19.986299+00:00' :: timestamptz,
+            interval '7 days'
+          ) AS a OFFSET 1
+      ) AS subquery
   ) AS core_datetimerangetest
 ORDER BY
-  "core_datetimerangetest"."id" ASC;
-
+  "core_datetimerangetest"."term" ASC;
 ```

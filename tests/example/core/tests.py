@@ -1,8 +1,6 @@
 import datetime
 import decimal
-import logging
 import warnings
-from time import time
 
 import pytest
 from django.contrib.postgres.fields import DateRangeField, DateTimeRangeField, DecimalRangeField, IntegerRangeField
@@ -267,7 +265,7 @@ def test_params():
     params = Params(0, 9, 1)
     integer_test = IntegerTest.objects.generate_series(params=params)
     assert integer_test.count() == 10
-    assert integer_test.last().id - integer_test.first().id == 9
+    assert integer_test.last().term - integer_test.first().term == 9
 
     integer_test = IntegerTest.objects.generate_series((0, 9, 1))
     assert integer_test.count() == 10
@@ -289,16 +287,16 @@ def test_integer_model():
     # Make sure we can create a QuerySet and perform basic operations
     integer_test = IntegerTest.objects.generate_series([0, 9])
     assert integer_test.count() == 10
-    assert integer_test.first().id == 0
-    assert integer_test.last().id == 9
-    integer_test_sum = integer_test.aggregate(int_sum=Sum("id"))
+    assert integer_test.first().term == 0
+    assert integer_test.last().term == 9
+    integer_test_sum = integer_test.aggregate(int_sum=Sum("term"))
     assert integer_test_sum["int_sum"] == 45
 
     # Check that we can query from the concrete model
-    assert ConcreteIntegerTest.objects.filter(some_field__in=integer_test).count() == 10
-    assert ConcreteIntegerTest.objects.filter(some_field__in=Subquery(integer_test)).count() == 10
+    assert ConcreteIntegerTest.objects.filter(some_field__in=integer_test.values("term")).count() == 10
+    assert ConcreteIntegerTest.objects.filter(some_field__in=Subquery(integer_test.values("term"))).count() == 10
 
-    integer_test_values = integer_test.filter(id=OuterRef("some_field"))
+    integer_test_values = integer_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteIntegerTest.objects.filter(some_field__in=Subquery(integer_test_values)).count() == 10
 
     subquery_test = (
@@ -311,7 +309,7 @@ def test_integer_model():
     assert subquery_test.last().val == 9
 
     subquery_exists_test = ConcreteIntegerTest.objects.all().annotate(
-        integer_test=Exists(integer_test.filter(id=OuterRef("some_field")))
+        integer_test=Exists(integer_test.filter(term=OuterRef("some_field")))
     )
     assert subquery_exists_test.first().some_field == 0
     assert subquery_exists_test.last().some_field == 9
@@ -322,9 +320,10 @@ def test_integer_model():
 
     # Check that we can query from the generate series model
     concrete_integer_test_values = ConcreteIntegerTest.objects.values("some_field")
-    assert IntegerTest.objects.generate_series([0, 9]).filter(id__in=concrete_integer_test_values).count() == 10
+    assert IntegerTest.objects.generate_series([0, 9]).filter(term__in=concrete_integer_test_values).count() == 10
     assert (
-        IntegerTest.objects.generate_series([0, 9]).filter(id__in=Subquery(concrete_integer_test_values)).count() == 10
+        IntegerTest.objects.generate_series([0, 9]).filter(term__in=Subquery(concrete_integer_test_values)).count()
+        == 10
     )
 
 
@@ -341,16 +340,16 @@ def test_decimal_model():
         [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
     )
     assert decimal_test.count() == 10
-    assert decimal_test.first().id == decimal.Decimal("0.00")
-    assert decimal_test.last().id == decimal.Decimal("9.00")
-    decimal_test_sum = decimal_test.aggregate(int_sum=Sum("id"))
+    assert decimal_test.first().term == decimal.Decimal("0.00")
+    assert decimal_test.last().term == decimal.Decimal("9.00")
+    decimal_test_sum = decimal_test.aggregate(int_sum=Sum("term"))
     assert decimal_test_sum["int_sum"] == decimal.Decimal("45.00")
 
     # Check that we can query from the concrete model
-    assert ConcreteDecimalTest.objects.filter(some_field__in=decimal_test).count() == 10
-    assert ConcreteDecimalTest.objects.filter(some_field__in=Subquery(decimal_test)).count() == 10
+    assert ConcreteDecimalTest.objects.filter(some_field__in=decimal_test.values("term")).count() == 10
+    assert ConcreteDecimalTest.objects.filter(some_field__in=Subquery(decimal_test.values("term"))).count() == 10
 
-    decimal_test_values = decimal_test.filter(id=OuterRef("some_field"))
+    decimal_test_values = decimal_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteDecimalTest.objects.filter(some_field__in=Subquery(decimal_test_values)).count() == 10
 
     subquery_test = (
@@ -358,12 +357,13 @@ def test_decimal_model():
         .annotate(val=Subquery(decimal_test_values, output_field=models.DecimalField()))
         .filter(val__isnull=False)
     )
+
     assert subquery_test.count() == 10
     assert subquery_test.first().val == decimal.Decimal("0.00")
     assert subquery_test.last().val == decimal.Decimal("9.00")
 
     subquery_exists_test = ConcreteDecimalTest.objects.all().annotate(
-        decimal_test=Exists(decimal_test.filter(id=OuterRef("some_field")))
+        decimal_test=Exists(decimal_test.filter(term=OuterRef("some_field")).values("term"))
     )
     assert subquery_exists_test.first().some_field == decimal.Decimal("0.00")
     assert subquery_exists_test.last().some_field == decimal.Decimal("9.00")
@@ -378,7 +378,7 @@ def test_decimal_model():
         DecimalTest.objects.generate_series(
             [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
         )
-        .filter(id__in=concrete_decimal_test_values)
+        .filter(term__in=concrete_decimal_test_values)
         .count()
         == 10
     )
@@ -386,7 +386,7 @@ def test_decimal_model():
         DecimalTest.objects.generate_series(
             [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
         )
-        .filter(id__in=Subquery(concrete_decimal_test_values))
+        .filter(term__in=Subquery(concrete_decimal_test_values))
         .count()
         == 10
     )
@@ -404,16 +404,16 @@ def test_date_model():
     # Make sure we can create a QuerySet and perform basic operations
     date_test = DateTest.objects.generate_series([date_sequence[0], date_sequence[-1], "1 days"])
     assert date_test.count() == 10
-    assert date_test.first().id.date() == date_sequence[0]
-    assert date_test.last().id.date() == date_sequence[-1]
-    date_test_sum = date_test.aggregate(int_sum=Count("id"))
+    assert date_test.first().term.date() == date_sequence[0]
+    assert date_test.last().term.date() == date_sequence[-1]
+    date_test_sum = date_test.aggregate(int_sum=Count("term"))
     assert date_test_sum["int_sum"] == 10
 
     # Check that we can query from the concrete model
-    assert ConcreteDateTest.objects.filter(some_field__in=date_test).count() == 10
-    assert ConcreteDateTest.objects.filter(some_field__in=Subquery(date_test)).count() == 10
+    assert ConcreteDateTest.objects.filter(some_field__in=date_test.values("term")).count() == 10
+    assert ConcreteDateTest.objects.filter(some_field__in=Subquery(date_test.values("term"))).count() == 10
 
-    date_test_values = date_test.filter(id=OuterRef("some_field"))
+    date_test_values = date_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteDateTest.objects.filter(some_field__in=Subquery(date_test_values)).count() == 10
 
     subquery_test = (
@@ -426,7 +426,7 @@ def test_date_model():
     assert subquery_test.last().val.date() == date_sequence[-1]
 
     subquery_exists_test = ConcreteDateTest.objects.all().annotate(
-        date_test=Exists(date_test.filter(id=OuterRef("some_field")))
+        date_test=Exists(date_test.filter(term=OuterRef("some_field")))
     )
     assert subquery_exists_test.first().some_field == date_sequence[0]
     assert subquery_exists_test.last().some_field == date_sequence[-1]
@@ -439,13 +439,13 @@ def test_date_model():
     concrete_date_test_values = ConcreteDateTest.objects.values("some_field")
     assert (
         DateTest.objects.generate_series([date_sequence[0], date_sequence[-1], "1 days"])
-        .filter(id__in=concrete_date_test_values)
+        .filter(term__in=concrete_date_test_values)
         .count()
         == 10
     )
     assert (
         DateTest.objects.generate_series([date_sequence[0], date_sequence[-1], "1 days"])
-        .filter(id__in=Subquery(concrete_date_test_values))
+        .filter(term__in=Subquery(concrete_date_test_values))
         .count()
         == 10
     )
@@ -463,16 +463,16 @@ def test_datetime_model():
     # Make sure we can create a QuerySet and perform basic operations
     datetime_test = DateTimeTest.objects.generate_series([datetime_sequence[0], datetime_sequence[-1], "1 days"])
     assert datetime_test.count() == 10
-    assert datetime_test.first().id == datetime_sequence[0]
-    assert datetime_test.last().id == datetime_sequence[-1]
-    datetime_test_sum = datetime_test.aggregate(int_sum=Count("id"))
+    assert datetime_test.first().term == datetime_sequence[0]
+    assert datetime_test.last().term == datetime_sequence[-1]
+    datetime_test_sum = datetime_test.aggregate(int_sum=Count("term"))
     assert datetime_test_sum["int_sum"] == 10
 
     # Check that we can query from the concrete model
-    assert ConcreteDateTimeTest.objects.filter(some_field__in=datetime_test).count() == 10
-    assert ConcreteDateTimeTest.objects.filter(some_field__in=Subquery(datetime_test)).count() == 10
+    assert ConcreteDateTimeTest.objects.filter(some_field__in=datetime_test.values("term")).count() == 10
+    assert ConcreteDateTimeTest.objects.filter(some_field__in=Subquery(datetime_test.values("term"))).count() == 10
 
-    datetime_test_values = datetime_test.filter(id=OuterRef("some_field"))
+    datetime_test_values = datetime_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteDateTimeTest.objects.filter(some_field__in=Subquery(datetime_test_values)).count() == 10
 
     subquery_test = (
@@ -485,7 +485,7 @@ def test_datetime_model():
     assert subquery_test.last().val == datetime_sequence[-1]
 
     subquery_exists_test = ConcreteDateTimeTest.objects.all().annotate(
-        datetime_test=Exists(datetime_test.filter(id=OuterRef("some_field")))
+        datetime_test=Exists(datetime_test.filter(term=OuterRef("some_field")))
     )
     assert subquery_exists_test.first().some_field == datetime_sequence[0]
     assert subquery_exists_test.last().some_field == datetime_sequence[-1]
@@ -498,13 +498,13 @@ def test_datetime_model():
     concrete_datetime_test_values = ConcreteDateTimeTest.objects.values("some_field")
     assert (
         DateTimeTest.objects.generate_series([datetime_sequence[0], datetime_sequence[-1], "1 days"])
-        .filter(id__in=concrete_datetime_test_values)
+        .filter(term__in=concrete_datetime_test_values)
         .count()
         == 10
     )
     assert (
         DateTimeTest.objects.generate_series([datetime_sequence[0], datetime_sequence[-1], "1 days"])
-        .filter(id__in=Subquery(concrete_datetime_test_values))
+        .filter(term__in=Subquery(concrete_datetime_test_values))
         .count()
         == 10
     )
@@ -522,24 +522,27 @@ def test_integer_range_model():
     # Make sure we can create a QuerySet and perform basic operations
     integer_range_test = IntegerRangeTest.objects.generate_series([0, 9])
 
-    integer_range_test.first().id
+    integer_range_test.first().term
     assert integer_range_test.count() == 10
 
-    assert integer_range_test.first().id == integer_range_sequence[0]
-    assert integer_range_test.get(id__overlap=(0, 1)) == integer_range_test.first()
-    assert integer_range_test.first().id == NumericRange(0, 1, "[)")
-    assert integer_range_test.last().id == integer_range_sequence[-1]
+    assert integer_range_test.first().term == integer_range_sequence[0]
+    assert integer_range_test.get(term__overlap=(0, 1)) == integer_range_test.first()
+    assert integer_range_test.first().term == NumericRange(0, 1, "[)")
+    assert integer_range_test.last().term == integer_range_sequence[-1]
 
-    integer_range_test_sum = integer_range_test.aggregate(int_sum=Count("id"))
+    integer_range_test_sum = integer_range_test.aggregate(int_sum=Count("term"))
     assert integer_range_test_sum["int_sum"] == 10
 
-    assert integer_range_test.filter(id__contains=NumericRange(1, 2)).count() == 1
+    assert integer_range_test.filter(term__contains=NumericRange(1, 2)).count() == 1
 
     # # Check that we can query from the concrete model
-    assert ConcreteIntegerRangeTest.objects.filter(some_field__in=integer_range_test).count() == 10
-    assert ConcreteIntegerRangeTest.objects.filter(some_field__in=Subquery(integer_range_test)).count() == 10
+    assert ConcreteIntegerRangeTest.objects.filter(some_field__in=integer_range_test.values("term")).count() == 10
+    assert (
+        ConcreteIntegerRangeTest.objects.filter(some_field__in=Subquery(integer_range_test.values("term"))).count()
+        == 10
+    )
 
-    integer_range_test_values = integer_range_test.filter(id=OuterRef("some_field"))
+    integer_range_test_values = integer_range_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteIntegerRangeTest.objects.filter(some_field__in=Subquery(integer_range_test_values)).count() == 10
 
     subquery_test = (
@@ -552,7 +555,7 @@ def test_integer_range_model():
     assert subquery_test.last().val == integer_range_sequence[-1]
 
     subquery_exists_test = ConcreteIntegerRangeTest.objects.all().annotate(
-        integer_range_test=Exists(integer_range_test.filter(id=OuterRef("some_field")))
+        integer_range_test=Exists(integer_range_test.filter(term=OuterRef("some_field")))
     )
 
     assert subquery_exists_test.first().some_field.lower == 0
@@ -569,12 +572,12 @@ def test_integer_range_model():
     # # Check that we can query from the generate series model
     concrete_integer_range_test_values = ConcreteIntegerRangeTest.objects.values("some_field")
     assert (
-        IntegerRangeTest.objects.generate_series([0, 9]).filter(id__in=concrete_integer_range_test_values).count()
+        IntegerRangeTest.objects.generate_series([0, 9]).filter(term__in=concrete_integer_range_test_values).count()
         == 10
     )
     assert (
         IntegerRangeTest.objects.generate_series([0, 9])
-        .filter(id__in=Subquery(concrete_integer_range_test_values))
+        .filter(term__in=Subquery(concrete_integer_range_test_values))
         .count()
         == 10
     )
@@ -599,16 +602,19 @@ def test_decimal_range_model():
 
     assert decimal_range_test.count() == 10
 
-    assert decimal_range_test.first().id == decimal_range_sequence[0]
-    assert decimal_range_test.last().id == decimal_range_sequence[-1]
-    decimal_range_test_sum = decimal_range_test.aggregate(int_sum=Count("id"))
+    assert decimal_range_test.first().term == decimal_range_sequence[0]
+    assert decimal_range_test.last().term == decimal_range_sequence[-1]
+    decimal_range_test_sum = decimal_range_test.aggregate(int_sum=Count("term"))
     assert decimal_range_test_sum["int_sum"] == 10
 
     # Check that we can query from the concrete model
-    assert ConcreteDecimalRangeTest.objects.filter(some_field__in=decimal_range_test).count() == 10
-    assert ConcreteDecimalRangeTest.objects.filter(some_field__in=Subquery(decimal_range_test)).count() == 10
+    assert ConcreteDecimalRangeTest.objects.filter(some_field__in=decimal_range_test.values("term")).count() == 10
+    assert (
+        ConcreteDecimalRangeTest.objects.filter(some_field__in=Subquery(decimal_range_test.values("term"))).count()
+        == 10
+    )
 
-    decimal_range_test_values = decimal_range_test.filter(id=OuterRef("some_field"))
+    decimal_range_test_values = decimal_range_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteDecimalRangeTest.objects.filter(some_field__in=Subquery(decimal_range_test_values)).count() == 10
 
     subquery_test = (
@@ -621,7 +627,7 @@ def test_decimal_range_model():
     assert subquery_test.last().val == decimal_range_sequence[-1]
 
     subquery_exists_test = ConcreteDecimalRangeTest.objects.all().annotate(
-        decimal_range_test=Exists(decimal_range_test.filter(id=OuterRef("some_field")))
+        decimal_range_test=Exists(decimal_range_test.filter(term=OuterRef("some_field")))
     )
 
     # !!! ToDo: Add this check to the other models!
@@ -652,7 +658,7 @@ def test_decimal_range_model():
         DecimalRangeTest.objects.generate_series(
             [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
         )
-        .filter(id__in=concrete_decimal_range_test_values)
+        .filter(term__in=concrete_decimal_range_test_values)
         .count()
         == 10
     )
@@ -660,7 +666,7 @@ def test_decimal_range_model():
         DecimalRangeTest.objects.generate_series(
             [decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("1.00")]
         )
-        .filter(id__in=Subquery(concrete_decimal_range_test_values))
+        .filter(term__in=Subquery(concrete_decimal_range_test_values))
         .count()
         == 10
     )
@@ -689,16 +695,16 @@ def test_date_range_model():
     )
 
     assert date_range_test.count() == 9
-    assert date_range_test.first().id == date_range_sequence[0]
-    assert date_range_test.last().id == date_range_sequence[-1]
-    date_range_test_sum = date_range_test.aggregate(int_sum=Count("id"))
+    assert date_range_test.first().term == date_range_sequence[0]
+    assert date_range_test.last().term == date_range_sequence[-1]
+    date_range_test_sum = date_range_test.aggregate(int_sum=Count("term"))
     assert date_range_test_sum["int_sum"] == 9
 
     # Check that we can query from the concrete model
-    assert ConcreteDateRangeTest.objects.filter(some_field__in=date_range_test).count() == 9
-    assert ConcreteDateRangeTest.objects.filter(some_field__in=Subquery(date_range_test)).count() == 9
+    assert ConcreteDateRangeTest.objects.filter(some_field__in=date_range_test.values("term")).count() == 9
+    assert ConcreteDateRangeTest.objects.filter(some_field__in=Subquery(date_range_test.values("term"))).count() == 9
 
-    date_range_test_values = date_range_test.filter(id=OuterRef("some_field"))
+    date_range_test_values = date_range_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteDateRangeTest.objects.filter(some_field__in=Subquery(date_range_test_values)).count() == 9
 
     subquery_test = (
@@ -711,7 +717,7 @@ def test_date_range_model():
     assert subquery_test.last().val == date_range_sequence[-1]
 
     subquery_exists_test = ConcreteDateRangeTest.objects.all().annotate(
-        date_range_test=Exists(date_range_test.filter(id=OuterRef("some_field")))
+        date_range_test=Exists(date_range_test.filter(term=OuterRef("some_field")))
     )
     assert subquery_exists_test.first().some_field == date_range_sequence[0]
     assert subquery_exists_test.last().some_field == date_range_sequence[-1]
@@ -728,7 +734,7 @@ def test_date_range_model():
         DateRangeTest.objects.generate_series(
             [timezone.now().date(), timezone.now().date() + timezone.timedelta(days=9), "1 days"]
         )
-        .filter(id__in=concrete_date_range_test_values)
+        .filter(term__in=concrete_date_range_test_values)
         .count()
         == 9
     )
@@ -736,7 +742,7 @@ def test_date_range_model():
         DateRangeTest.objects.generate_series(
             [timezone.now().date(), timezone.now().date() + timezone.timedelta(days=9), "1 days"]
         )
-        .filter(id__in=Subquery(concrete_date_range_test_values))
+        .filter(term__in=Subquery(concrete_date_range_test_values))
         .count()
         == 9
     )
@@ -767,17 +773,20 @@ def test_datetime_range_model():
 
     assert datetime_range_test.count() == 9
 
-    assert datetime_range_test.first().id == datetime_range_sequence[0]
-    assert datetime_range_test.last().id == datetime_range_sequence[-1]
-    date_range_test_sum = datetime_range_test.aggregate(int_sum=Count("id"))
+    assert datetime_range_test.first().term == datetime_range_sequence[0]
+    assert datetime_range_test.last().term == datetime_range_sequence[-1]
+    date_range_test_sum = datetime_range_test.aggregate(int_sum=Count("term"))
     assert date_range_test_sum["int_sum"] == 9
 
     # Check that we can query from the concrete model
 
-    assert ConcreteDateTimeRangeTest.objects.filter(some_field__in=datetime_range_test).count() == 9
-    assert ConcreteDateTimeRangeTest.objects.filter(some_field__in=Subquery(datetime_range_test)).count() == 9
+    assert ConcreteDateTimeRangeTest.objects.filter(some_field__in=datetime_range_test.values("term")).count() == 9
+    assert (
+        ConcreteDateTimeRangeTest.objects.filter(some_field__in=Subquery(datetime_range_test.values("term"))).count()
+        == 9
+    )
 
-    datetime_range_test_values = datetime_range_test.filter(id=OuterRef("some_field"))
+    datetime_range_test_values = datetime_range_test.filter(term=OuterRef("some_field")).values("term")
     assert ConcreteDateTimeRangeTest.objects.filter(some_field__in=Subquery(datetime_range_test_values)).count() == 9
 
     subquery_test = (
@@ -790,7 +799,7 @@ def test_datetime_range_model():
     assert subquery_test.last().val == datetime_range_sequence[-1]
 
     subquery_exists_test = ConcreteDateTimeRangeTest.objects.all().annotate(
-        datetime_range_test=Exists(datetime_range_test.filter(id=OuterRef("some_field")))
+        datetime_range_test=Exists(datetime_range_test.filter(term=OuterRef("some_field")))
     )
     assert subquery_exists_test.first().some_field.lower == datetime_range_sequence[0].lower
     assert subquery_exists_test.first().some_field.upper == datetime_range_sequence[0].upper
@@ -811,16 +820,15 @@ def test_datetime_range_model():
         DateTimeRangeTest.objects.generate_series(
             [datetime_range_sequence[0].lower, datetime_range_sequence[-1].upper, "1 days"]
         )
-        .filter(id__in=concrete_datetime_range_test_values)
+        .filter(term__in=concrete_datetime_range_test_values)
         .count()
         == 9
     )
-
     assert (
         DateTimeRangeTest.objects.generate_series(
             [datetime_range_sequence[0].lower, datetime_range_sequence[-1].upper, "1 days"]
         )
-        .filter(id__in=Subquery(concrete_datetime_range_test_values))
+        .filter(term__in=Subquery(concrete_datetime_range_test_values))
         .count()
         == 9
     )
