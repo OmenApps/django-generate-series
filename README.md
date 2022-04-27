@@ -70,6 +70,26 @@ integer_sequence_queryset = IntegerTest.objects.generate_series(
     [0, 100_000_000]
 )
 
+for item in integer_sequence_queryset:
+    print(item.id, item.term)
+```
+
+Result:
+
+    1 0
+    2 1
+    3 2
+    4 3
+    5 4
+    6 5
+    7 6
+    8 7
+    9 8
+    10 9
+    11 10
+    ...
+
+```python
 # Create a sequence of dates from now until a year from now
 now = timezone.now()
 later = (now + timezone.timedelta(days=365))
@@ -77,4 +97,34 @@ later = (now + timezone.timedelta(days=365))
 date_sequence_queryset = DateTest.objects.generate_series(
     [now, later, "1 days"]
 )
+
+for item in date_sequence_queryset:
+    print(item.id, item.term)
 ```
+
+Result:
+
+    1 2022-04-27 02:01:35.926057+00:00
+    2 2022-04-28 02:01:35.926057+00:00
+    3 2022-04-29 02:01:35.926057+00:00
+    4 2022-04-30 02:01:35.926057+00:00
+    5 2022-05-01 02:01:35.926057+00:00
+    6 2022-05-02 02:01:35.926057+00:00
+    7 2022-05-03 02:01:35.926057+00:00
+    8 2022-05-04 02:01:35.926057+00:00
+    9 2022-05-05 02:01:35.926057+00:00
+    10 2022-05-06 02:01:35.926057+00:00
+    11 2022-05-07 02:01:35.926057+00:00
+    ...
+
+## Terminology
+
+Although this packages is named django-generate-series based on Postgres' [`generate_series` set-returning function](https://www.postgresql.org/docs/current/functions-srf.html), mathematically we are creating a [sequence](https://en.wikipedia.org/wiki/Sequence) rather than a [series](https://en.wikipedia.org/wiki/Series_(mathematics)).
+
+- **sequence**: Formally, "a list of objects (or events) which have been ordered in a sequential fashion; such that each member either comes before, or after, every other member."
+
+    In django-generate-series, we can generate sequences of integers, decimals, dates, datetimes, as well as the equivalent ranges of each of these types.
+
+- **term**: The *n*th item in the sequence, where '*n*th' can be found using the id of the model instance.
+
+    This is the name of the field in the model which contains the term value.
