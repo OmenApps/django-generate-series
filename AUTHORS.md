@@ -6,4 +6,4 @@
 
 ## Contributors
 
-None yet. Why not be the first?
+- Adam Johnson ([@AdamChainz](https://twitter.com/AdamChainz)) ❤️
