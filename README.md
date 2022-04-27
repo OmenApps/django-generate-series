@@ -71,9 +71,9 @@ Result:
 
 *Note: See the docs and the example project in the tests directory for further examples of usage.*
 
-## Using with partial
+## Usage with partial
 
-If you often needs sequences of a given field type or with certain args, you can use [partial](https://docs.python.org/3/library/functools.html#functools.partial).
+If you often need sequences of a given field type or with certain args, you can use [partial](https://docs.python.org/3/library/functools.html#functools.partial).
 
 Example with default `include_id` and `output_field` values:
 
