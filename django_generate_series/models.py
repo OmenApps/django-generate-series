@@ -64,6 +64,7 @@ class FromRaw:
         start,
         stop,
         step=None,
+        span=None,
         include_id=False,
         model: AbstractBaseSeriesModel = None,
     ):
@@ -71,11 +72,14 @@ class FromRaw:
         self.start = start
         self.stop = stop
         self.step = step
+        self.span = span
         self.include_id = include_id
         self.range = False
         self.field_type = FieldType.INTEGER
 
         # Verify the input params match for the type of model field used
+
+        # ToDo: Check span type
 
         if issubclass(self.term, (models.DecimalField, pg_models.DecimalRangeField)):
             self.check_params(
@@ -184,6 +188,7 @@ class FromRaw:
             if self.field_type == FieldType.DATETIME:
                 if self.include_id:
                     sql = """
+                        --- %s
                         SELECT
                             row_number() over () as id,
                             "term"
@@ -196,6 +201,7 @@ class FromRaw:
                     """
                 else:
                     sql = """
+                        --- %s
                         SELECT tstzrange((lag(a) OVER()), a, '[)') AS term
                             FROM generate_series(timestamptz %s, timestamptz %s, interval %s)
                             AS a OFFSET 1
@@ -203,6 +209,7 @@ class FromRaw:
             elif self.field_type == FieldType.DATE:
                 if self.include_id:
                     sql = """
+                        --- %s
                         SELECT
                             row_number() over () as id,
                             "term"
@@ -217,6 +224,7 @@ class FromRaw:
                     """
                 else:
                     sql = """
+                        --- %s
                         SELECT daterange((lag(a.n) OVER()), a.n, '[)') AS term
                         FROM (
                             SELECT generate_series(date %s, date %s, interval %s)::date
@@ -231,13 +239,13 @@ class FromRaw:
                             "term"
                         FROM
                             (
-                                SELECT numrange(a, a + 1) AS term
+                                SELECT numrange(a, a + %s) AS term
                                 FROM generate_series(%s, %s, %s) a
                             ) AS seriesquery
                     """
                 else:
                     sql = """
-                        SELECT numrange(a, a + 1) AS term
+                        SELECT numrange(a, a + %s) AS term
 	                        FROM generate_series(%s, %s, %s) a
                     """
             elif self.field_type == FieldType.BIGINTEGER:
@@ -248,13 +256,13 @@ class FromRaw:
                             "term"
                         FROM
                             (
-                                SELECT int8range(a, a + 1) AS term
+                                SELECT int8range(a, a + %s) AS term
                                 FROM generate_series(%s, %s, %s) a
                             ) AS subquery
                     """
                 else:
                     sql = """
-                       SELECT int8range(a, a + 1) AS term
+                       SELECT int8range(a, a + %s) AS term
                         FROM generate_series(%s, %s, %s) a
                     """
             else:
@@ -266,13 +274,13 @@ class FromRaw:
                             "term"
                         FROM
                             (
-                                SELECT int4range(a, a + 1) AS term
+                                SELECT int4range(a, a + %s) AS term
                                 FROM generate_series(%s, %s, %s) a
                             ) AS seriesquery
                     """
                 else:
                     sql = """
-                        SELECT int4range(a, a + 1) AS term
+                        SELECT int4range(a, a + %s) AS term
                         FROM generate_series(%s, %s, %s) a
                     """
         else:
@@ -280,6 +288,7 @@ class FromRaw:
                 # Must specify this one, or defaults timestamptz rather than date
                 if self.include_id:
                     sql = """
+                        --- %s
                         SELECT
                             row_number() over () as id,
                             "term"
@@ -290,10 +299,14 @@ class FromRaw:
                             ) AS seriesquery
                     """
                 else:
-                    sql = "SELECT generate_series(%s, %s, %s)::date term"
+                    sql = """
+                        --- %s
+                        SELECT generate_series(%s, %s, %s)::date term
+                    """
             else:
                 if self.include_id:
                     sql = """
+                        --- %s
                         SELECT
                             row_number() over () as id,
                             "term"
@@ -304,7 +317,10 @@ class FromRaw:
                             ) AS seriesquery
                     """
                 else:
-                    sql = "SELECT generate_series(%s, %s, %s) term"
+                    sql = """
+                        --- %s
+                        SELECT generate_series(%s, %s, %s) term
+                    """
 
         return sql
 
@@ -323,7 +339,7 @@ class GenerateSeriesQuery(Query):
             result, params = get_from_clause_method(*args, **kwargs)
             wrapper = source.raw_query
             result[0] = f"{wrapper} AS {tuple(compiler.query.alias_map)[0]}"
-            params = (source.start, source.stop, source.step or 1) + tuple(params)
+            params = (source.span, source.start, source.stop, source.step or 1) + tuple(params)
 
             return result, params
 
@@ -346,12 +362,12 @@ class GenerateSeriesQuerySet(models.QuerySet):
 class GenerateSeriesManager(models.Manager):
     """Custom manager for creating series"""
 
-    def _generate_series(self, start, stop, step=None, include_id=False):
+    def _generate_series(self, start, stop, step=None, span=None, include_id=False):
 
         # def series_func(cls, *args):
         def series_func(cls):
             model = self.model
-            return FromRaw(model=model, start=start, stop=stop, step=step, include_id=include_id)
+            return FromRaw(model=model, start=start, stop=stop, step=step, span=span, include_id=include_id)
 
         return GenerateSeriesQuerySet(self.model, using=self._db, _series_func=series_func)
 
@@ -368,6 +384,7 @@ def generate_series(
     start: Union[int, date, datetime, datetimetz],
     stop: Union[int, date, datetime, datetimetz],
     step: Optional[Union[int, str]] = None,
+    span: Optional[int] = 1,
     *,
     output_field: models.Field,
     include_id: Optional[bool] = False,
@@ -376,7 +393,7 @@ def generate_series(
     default_bounds: Optional[Union[str, None]] = None,
 ):
     model_class = _make_model_class(output_field, include_id, max_digits, decimal_places, default_bounds)
-    return model_class.objects._generate_series(start, stop, step, include_id)
+    return model_class.objects._generate_series(start, stop, step, span, include_id)
 
 
 @lru_cache(maxsize=128)

@@ -527,6 +527,9 @@ def test_integer_range_model():
     integer_range_test.first().term
     assert integer_range_test.count() == 10
 
+    for item in integer_range_test:
+        print(item.term)
+
     assert integer_range_test.first().term == integer_range_sequence[0]
     assert integer_range_test.get(term__overlap=(0, 1)) == integer_range_test.first()
     assert integer_range_test.first().term == NumericRange(0, 1, "[)")
