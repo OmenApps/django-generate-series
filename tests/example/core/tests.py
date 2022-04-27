@@ -1,6 +1,5 @@
 import datetime
 import decimal
-import warnings
 
 import pytest
 from django.contrib.postgres.fields import DateRangeField, DateTimeRangeField, DecimalRangeField, IntegerRangeField

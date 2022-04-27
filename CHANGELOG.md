@@ -1,6 +1,10 @@
 # History
 
 
+## 0.4.3 (2022-04-27)
+
+  * Add ability to specify the span from lower to upper values in each term for ranges.
+
 ## 0.4.0 (2022-04-27)
 
 Breaking changes
