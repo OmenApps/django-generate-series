@@ -26,6 +26,8 @@ for item in integer_sequence_queryset:
 
 Result:
 
+    term
+    ----
     0
     1
     2
@@ -55,6 +57,8 @@ for item in date_sequence_queryset:
 
 Result:
 
+    term
+    ----
     2022-04-27
     2022-04-28
     2022-04-29
@@ -66,6 +70,20 @@ Result:
     2023-04-27
 
 *Note: See the docs and the example project in the tests directory for further examples of usage.*
+
+## Using with partial
+
+If you often needs sequences of a given field type or with certain args, you can use [partial](https://docs.python.org/3/library/functools.html#functools.partial).
+
+Example with default `include_id` and `output_field` values:
+
+```python
+from functools import partial
+
+int_and_id_series = partial(generate_series, include_id=True, output_field=BigIntegerField)
+
+qs = int_and_id_series(1, 100)
+```
 
 ## Terminology
 
