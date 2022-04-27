@@ -12,7 +12,6 @@ from django.db import models
 from django.db.models.sql import Query
 from django.utils.timezone import datetime as datetimetz
 
-from django_generate_series.base import NoEffectManager, NoEffectQuerySet
 from django_generate_series.exceptions import ModelFieldNotSupported
 
 INTERVAL_UNITS = (
@@ -332,7 +331,7 @@ class GenerateSeriesQuery(Query):
         return compiler
 
 
-class GenerateSeriesQuerySet(NoEffectQuerySet):
+class GenerateSeriesQuerySet(models.QuerySet):
     def __init__(self, *args, query=None, _series_func=None, **kwargs):
         empty_query = query is None
         r = super().__init__(*args, query=query, **kwargs)
@@ -344,7 +343,7 @@ class GenerateSeriesQuerySet(NoEffectQuerySet):
         return r
 
 
-class GenerateSeriesManager(NoEffectManager):
+class GenerateSeriesManager(models.Manager):
     """Custom manager for creating series"""
 
     def _generate_series(self, start, stop, step=None, include_id=False):

@@ -175,55 +175,6 @@ def test_sequence_utils():
     assert "If a num_steps value is provided, it must be positive" in str(error_msg.value)
 
 
-def test_warnings():
-    """Warnings should be logged when invalid methods are attempted."""
-    integer_test = generate_series(0, 9, output_field=models.IntegerField)
-
-    # Check QuerySet methods
-    integer_test.delete()
-    with pytest.warns(UserWarning):
-        warnings.warn(
-            "This model has been intentionally limited in capability. "
-            "The requested method has no effect and will be ignored.",
-            UserWarning,
-        )
-
-    # Check Manager methods
-    def check_logs(input):
-        with pytest.warns(UserWarning):
-            warnings.warn(
-                "This model has been intentionally limited in capability. "
-                "The requested method has no effect and will be ignored.",
-                UserWarning,
-            )
-
-    check_logs(integer_test.filter())
-    check_logs(integer_test.exclude())
-    check_logs(integer_test.annotate())
-    check_logs(integer_test.alias())
-    check_logs(integer_test.order_by())
-    check_logs(integer_test.reverse())
-    check_logs(integer_test.distinct())
-    check_logs(integer_test.values())
-    check_logs(integer_test.values_list())
-    check_logs(integer_test.none())
-    check_logs(integer_test.all())
-    check_logs(integer_test.union())
-    check_logs(integer_test.intersection())
-    check_logs(integer_test.difference())
-    check_logs(integer_test.select_related())
-    check_logs(integer_test.prefetch_related())
-    check_logs(integer_test.extra())
-    check_logs(integer_test.defer())
-    check_logs(integer_test.only())
-    check_logs(integer_test.select_for_update())
-    check_logs(integer_test.iterator())
-    check_logs(integer_test.aggregate())
-    check_logs(integer_test.update())
-    check_logs(integer_test.delete())
-    check_logs(integer_test.as_manager())
-
-
 @pytest.mark.django_db
 def test_integer_model():
     """Make sure we can create and use Integer sequences"""
