@@ -370,7 +370,7 @@ def generate_series(
     stop: Union[int, date, datetime, datetimetz],
     step: Optional[Union[int, str]] = None,
     *,
-    output_field: type[models.Field],
+    output_field: models.Field,
     include_id: Optional[bool] = False,
     max_digits: Optional[Union[int, None]] = None,
     decimal_places: Optional[Union[int, None]] = None,
