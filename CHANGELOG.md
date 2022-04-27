@@ -1,6 +1,18 @@
 # History
 
 
+## 0.3.0 (2022-04-25)
+
+Breaking changes
+
+  * Changed from using `id` as the sequence value to using the `term` field.
+
+## 0.2.1 (2022-04-25)
+
+  * Implemented all PRs from adamchainz.
+  * Improve test matrix.
+  * Cleanup unused code and comments.
+
 ## 0.2.0 (2022-04-23)
 
   * Basic package functionality is implemented.
