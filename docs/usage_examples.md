@@ -8,7 +8,7 @@ Generate a sequence of every third integer from -12 to 12.
 from django.db import models
 from django_generate_series.models import generate_series
 
-integer_sequence = generate_series(-12, 13, 3, output_field=models.IntegerField)
+integer_sequence = generate_series(-12, 12, 3, output_field=models.IntegerField)
 
 for item in integer_sequence:
     print(item.term)
@@ -34,7 +34,7 @@ SELECT
 FROM
   (
     SELECT
-      generate_series(-12, 13, 3) term
+      generate_series(-12, 12, 3) term
   ) AS django_generate_series_integerfieldseries;
 ```
 
@@ -48,7 +48,7 @@ To include the `id` field in any sequence, set `include_id=True`. This does add 
 from django.db import models
 from django_generate_series.models import generate_series
 
-integer_sequence = generate_series(-12, 13, 3, include_id=True, output_field=models.IntegerField)
+integer_sequence = generate_series(-12, 12, 3, include_id=True, output_field=models.IntegerField)
 
 for item in integer_sequence:
     print(item.id, item.term)
@@ -80,7 +80,7 @@ FROM
     FROM
       (
         SELECT
-          generate_series(-12, 13, 3) term
+          generate_series(-12, 12, 3) term
       ) AS seriesquery
   ) AS django_generate_series_integerfieldseries;
 
