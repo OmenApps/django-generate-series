@@ -42,4 +42,3 @@ class SimpleOrder(models.Model):
 class Event(models.Model):
     event_datetime = models.DateTimeField()
     ticket_qty = models.IntegerField()
-    false_field = models.BooleanField(default=False)

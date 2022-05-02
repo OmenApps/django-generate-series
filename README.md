@@ -24,7 +24,7 @@ Although this packages is named django-generate-series based on Postgres' [`gene
 
 ## API
 
-The package includes a `generate_series` function from which you can create your own series-generating QuerySets. The field type passed into the function as `output_field` determines the resulting type of series that can be created.
+The package includes a `generate_series` function from which you can create your own series-generating QuerySets. The field type passed into the function as `output_field` determines the resulting type of series that can be created. (Thanks, [@adamchainz](https://twitter.com/adamchainz) for the format suggestion!)
 
 ### generate_series arguments
 

@@ -265,25 +265,26 @@ FROM
 
 This example creates a sequence of date ranges, each seven day in length from today to 90 days from now. Then, similar to the previous example, we will sum all of the tickets with an event_datetime which overlaps with a range.
 
+Note the use of `Func` here bypasses Django's default 'group by' functionality, which allows us to select rows that fall within an entire range. Normally, django would try to group by specific matches, but we want to match anything that is contained within each range. (Thanks [@niccolomineo](https://twitter.com/niccolomineo) for the tip!)
+
 Given a model like this (included in tests.example.core.models).
 
 ```python
 class Event(models.Model):
     event_datetime = models.DateTimeField()
     ticket_qty = models.IntegerField()
-    false_field = models.BooleanField(default=False)
 ```
-*Note: As a workaround for an oddity in django's ORM, we have included a `false_field`, which always evaluates to `False`. This allows us to perform a GROUP_BY in the SQL, since the datetime of each Event may be different, but we want to to group them if they fall in the same 7-day period. We would welcome improved approaches.*
 
 ### Create some random events
 
 ```python
 import random
 from django.contrib.postgres.fields import DateTimeRangeField
-from django.db.models import OuterRef, Subquery, Sum, Count
+from django.db.models import OuterRef, Subquery, Sum
 from django.utils import timezone
 from tests.example.core.random_utils import get_random_datetime
 from tests.example.core.models import Event
+from django_generate_series.models import generate_series
 
 # Get the current datetime and the datetime 90 days ago
 now = timezone.now()
@@ -352,8 +353,7 @@ for item in Event.objects.all().order_by("event_datetime"):
 event_subquery = (
     Event.objects.filter(event_datetime__contained_by=OuterRef("term"))
     .order_by()
-    .values("false_field")
-    .annotate(sum_of_tickets=Sum("ticket_qty"))
+    .annotate(sum_of_tickets=Func(F("ticket_qty"), function="SUM"))
     .values("sum_of_tickets")
 )
 ```
@@ -397,18 +397,17 @@ SELECT
     FROM
       "core_event" U0
     WHERE
-      U0."event_datetime" <@ "django_generate_series_datetimerangefieldseries"."term"::tstzrange
-    GROUP BY
-      U0."false_field"
+      U0."event_datetime" < @ "django_generate_series_datetimerangefieldseries"."term" :: tstzrange
   ) AS "ticket_quantities"
 FROM
   (
+    --- 1
     SELECT
       tstzrange((lag(a) OVER()), a, '[)') AS term
     FROM
       generate_series(
-            timestamptz '2022-04-27T01:39:19.986299+00:00'::timestamptz,
-            timestamptz '2022-07-26T01:39:19.986299+00:00'::timestamptz,
+        timestamptz '2022-04-27T01:39:19.986299+00:00' :: timestamptz,
+        timestamptz '2022-07-26T01:39:19.986299+00:00' :: timestamptz,
         interval '7 days'
       ) AS a OFFSET 1
   ) AS django_generate_series_datetimerangefieldseries
@@ -426,7 +425,7 @@ This example is a slight modification of the example above, using the same Event
 import random
 from django.contrib.postgres.fields import IntegerRangeField
 from django.db import models
-from django.db.models import OuterRef, Subquery, Sum
+from django.db.models import OuterRef, Subquery, Count
 from django.utils import timezone
 from tests.example.core.random_utils import get_random_datetime
 from tests.example.core.models import Event
@@ -486,8 +485,7 @@ for item in Event.objects.all().order_by("ticket_qty"):
 event_subquery = (
     Event.objects.filter(ticket_qty__contained_by=OuterRef("term"))
     .order_by()
-    .values("false_field")
-    .annotate(count_of_tickets=Count("ticket_qty"))
+    .annotate(count_of_tickets=Func(F("ticket_qty"), function="COUNT"))
     .values("count_of_tickets")
 )
 ```
@@ -531,9 +529,7 @@ SELECT
     FROM
       "core_event" U0
     WHERE
-      U0."ticket_qty" <@ "django_generate_series_integerrangefieldseries"."term"::int4range
-    GROUP BY
-      U0."false_field"
+      U0."ticket_qty" < @ "django_generate_series_integerrangefieldseries"."term" :: int4range
   ) AS "ticket_quantities"
 FROM
   (
