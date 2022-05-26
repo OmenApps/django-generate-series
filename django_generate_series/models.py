@@ -386,7 +386,7 @@ def generate_series(
     step: Optional[Union[int, str]] = None,
     span: Optional[int] = 1,
     *,
-    output_field: models.Field,
+    output_field: Type[models.Field],
     include_id: Optional[bool] = False,
     max_digits: Optional[Union[int, None]] = None,
     decimal_places: Optional[Union[int, None]] = None,
