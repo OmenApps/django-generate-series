@@ -155,9 +155,9 @@ class FromRaw:
         if self.step is not None and not any(issubclass(type(self.step), item) for item in step_type):
             raise ValueError(f"Step type of {step_type} expected, but received type {type(self.step)}")
 
-        # Check that stop is larger than start
-        if not self.start < self.stop:
-            raise ValueError(f"Start value must be smaller than stop value")
+        # Check that stop is larger or equal to start
+        if not self.start <= self.stop:
+            raise ValueError(f"Start value must be smaller or equal to stop value")
 
         # Only numeric series can use just `start` & `stop`. Other types also need `step`
         if self.step is None and not isinstance(self.start, int):
