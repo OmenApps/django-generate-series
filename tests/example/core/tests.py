@@ -185,6 +185,7 @@ def test_integer_model():
     # Run through some variations
     assert generate_series(0, 9, output_field=models.BigIntegerField).count() == 10
     assert generate_series(0, 9, 2, output_field=models.BigIntegerField).count() == 5
+    assert generate_series(1, 1, output_field=models.BigIntegerField).count() == 1
     assert generate_series(0, 9, 2, include_id=True, output_field=models.BigIntegerField).count() == 5
     assert generate_series(0, 9, 2, include_id=True, output_field=models.BigIntegerField).last().id == 5
 
@@ -258,6 +259,12 @@ def test_decimal_model():
             decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("2.00"), output_field=models.DecimalField
         ).count()
         == 5
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("1.00"), decimal.Decimal("1.00"), decimal.Decimal("1.00"), output_field=models.DecimalField
+        ).count()
+        == 1
     )
     assert (
         generate_series(
@@ -351,6 +358,7 @@ def test_date_model():
     # Run through some variations
     assert generate_series(date_sequence[0], date_sequence[-1], "1 days", output_field=models.DateField).count() == 10
     assert generate_series(date_sequence[0], date_sequence[-1], "2 days", output_field=models.DateField).count() == 5
+    assert generate_series(date_sequence[0], date_sequence[0], "1 days", output_field=models.DateField).count() == 1
     assert (
         generate_series(
             date_sequence[0], date_sequence[-1], "2 days", include_id=True, output_field=models.DateField
@@ -440,6 +448,12 @@ def test_datetime_model():
     )
     assert (
         generate_series(
+            datetime_sequence[0], datetime_sequence[0], "1 days", output_field=models.DateTimeField
+        ).count()
+        == 1
+    )
+    assert (
+        generate_series(
             datetime_sequence[0], datetime_sequence[-1], "2 days", include_id=True, output_field=models.DateTimeField
         ).count()
         == 5
@@ -517,6 +531,7 @@ def test_integer_range_model():
     # Run through some variations
     assert generate_series(0, 9, output_field=IntegerRangeField).count() == 10
     assert generate_series(0, 9, 2, output_field=IntegerRangeField).count() == 5
+    assert generate_series(1, 1, output_field=IntegerRangeField).count() == 1
     assert generate_series(0, 9, 2, include_id=True, output_field=IntegerRangeField).count() == 5
     assert generate_series(0, 9, 2, include_id=True, output_field=IntegerRangeField).last().id == 5
 
@@ -613,6 +628,12 @@ def test_decimal_range_model():
             decimal.Decimal("0.00"), decimal.Decimal("9.00"), decimal.Decimal("2.00"), output_field=DecimalRangeField
         ).count()
         == 5
+    )
+    assert (
+        generate_series(
+            decimal.Decimal("1.00"), decimal.Decimal("1.00"), decimal.Decimal("1.00"), output_field=DecimalRangeField
+        ).count()
+        == 1
     )
     assert (
         generate_series(
@@ -751,6 +772,15 @@ def test_date_range_model():
     assert (
         generate_series(
             timezone.now().date(),
+            timezone.now().date(),
+            "1 days",
+            output_field=DateRangeField,
+        ).count()
+        == 0
+    )
+    assert (
+        generate_series(
+            timezone.now().date(),
             timezone.now().date() + timezone.timedelta(days=10),
             "2 days",
             include_id=True,
@@ -876,6 +906,15 @@ def test_datetime_range_model():
             output_field=DateTimeRangeField,
         ).count()
         == 5
+    )
+    assert (
+        generate_series(
+            timezone.now(),
+            timezone.now(),
+            "1 days",
+            output_field=DateTimeRangeField,
+        ).count()
+        == 0
     )
     assert (
         generate_series(
