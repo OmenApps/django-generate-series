@@ -379,9 +379,9 @@ class AbstractSeriesModel(AbstractBaseSeriesModel):
 
 
 def generate_series(
-    start: Union[int, date, datetime, datetimetz],
-    stop: Union[int, date, datetime, datetimetz],
-    step: Optional[Union[int, str]] = None,
+    start: Union[int, Decimal, date, datetime, datetimetz],
+    stop: Union[int, Decimal, date, datetime, datetimetz],
+    step: Optional[Union[int, Decimal, str]] = None,
     span: Optional[int] = 1,
     *,
     output_field: Type[models.Field],
