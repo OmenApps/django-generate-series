@@ -1,5 +1,4 @@
 import decimal
-from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
