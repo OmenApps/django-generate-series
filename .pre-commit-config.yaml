@@ -19,10 +19,11 @@ repos:
       - id: isort
         args: ["--profile", "black", --line-length=119]
 
-  # - repo: https://github.com/PyCQA/flake8
-  #   rev: 4.0.1
-  #   hooks:
-  #     - id: flake8
+  - repo: https://github.com/PyCQA/flake8
+    rev: 4.0.1
+    hooks:
+      - id: flake8
+        args: [--max-line-length=119]
 
 ci:
   autoupdate_schedule: weekly
