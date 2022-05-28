@@ -526,7 +526,7 @@ def test_integer_range_model():
     # Create concrete instances
     integer_range_sequence = tuple(NumericRange(idx, idx + 1, "[)") for idx in range(0, 10))
     for item in integer_range_sequence:
-        x = ConcreteIntegerRangeTest.objects.create(some_field=item)
+        ConcreteIntegerRangeTest.objects.create(some_field=item)
 
     # Run through some variations
     assert generate_series(0, 9, output_field=IntegerRangeField).count() == 10
@@ -886,7 +886,7 @@ def test_datetime_range_model():
 
     # Create concrete instances
     for idx in datetime_range_sequence:
-        x = ConcreteDateTimeRangeTest.objects.create(some_field=idx)
+        ConcreteDateTimeRangeTest.objects.create(some_field=idx)
 
     # Run through some variations
     assert (
