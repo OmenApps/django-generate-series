@@ -174,7 +174,7 @@ class FromRaw:
                 )
 
             try:
-                interval = float(interval)
+                float(interval)
             except ValueError:
                 raise ValueError("Invalid interval value. Must be capable of being converted to a numeric type.")
 
