@@ -156,11 +156,11 @@ class FromRaw:
 
         # Check that stop is larger or equal to start
         if not self.start <= self.stop:
-            raise ValueError(f"Start value must be smaller or equal to stop value")
+            raise ValueError("Start value must be smaller or equal to stop value")
 
         # Only numeric series can use just `start` & `stop`. Other types also need `step`
         if self.step is None and not isinstance(self.start, int):
-            raise Exception(f"Step must be provided for non-integer series")
+            raise Exception("Step must be provided for non-integer series")
 
         # If step is a str, make sure it is formatted correctly
         #   Starting with a numeric value, then a space, and then a valid interval unit
@@ -422,7 +422,7 @@ def _make_model_class(output_field, include_id, max_digits, decimal_places, defa
 
     # Limit default_bounds to valid string values
     if default_bounds not in ["[]", "()", "[)", "(]", None]:
-        raise ValueError(f"Value of default_bounds must be one of: '[]', '()', '[)', '(]'")
+        raise ValueError("Value of default_bounds must be one of: '[]', '()', '[)', '(]'")
 
     if include_id:
         model_dict["id"] = models.BigAutoField(primary_key=True)
