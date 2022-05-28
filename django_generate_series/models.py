@@ -327,7 +327,7 @@ class FromRaw:
 class GenerateSeriesQuery(Query):
     def __init__(self, *args, _series_func=None, **kwargs):
         self._series_func = _series_func
-        return super().__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def get_compiler(self, *args, **kwargs):
         compiler = super().get_compiler(*args, **kwargs)
@@ -349,13 +349,12 @@ class GenerateSeriesQuery(Query):
 class GenerateSeriesQuerySet(models.QuerySet):
     def __init__(self, *args, query=None, _series_func=None, **kwargs):
         empty_query = query is None
-        r = super().__init__(*args, query=query, **kwargs)
+        super().__init__(*args, query=query, **kwargs)
         if empty_query:
             self.query = GenerateSeriesQuery(
                 self.model,
                 _series_func=_series_func,
             )
-        return r
 
 
 class GenerateSeriesManager(models.Manager):
