@@ -37,7 +37,7 @@ def get_random_date(*args, **kwargs) -> datetime.date:
 
 def get_random_datetime_range(
     *args, max_range_length_seconds: int = 60 * 60 * 24 * 14, **kwargs
-) -> Tuple[timezone.datetime]:
+) -> Tuple[timezone.datetime, timezone.datetime]:
     """
     Returns a datetime range tuple with start_datetime between min_date and max_timedelta,
         and an end_datetime between start_datetime and max_range_length_seconds
@@ -49,7 +49,7 @@ def get_random_datetime_range(
     return (start_datetime, end_datetime)
 
 
-def get_random_date_range(*args, **kwargs) -> Tuple[datetime.date]:
+def get_random_date_range(*args, **kwargs) -> Tuple[datetime.date, datetime.date]:
     """
     Returns a date range tuple with start_datetime between min_date and max_timedelta,
         and an end_datetime between start_datetime and max_range_length_seconds
