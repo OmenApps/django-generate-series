@@ -245,7 +245,7 @@ class FromRaw:
                 else:
                     sql = """
                         SELECT numrange(a, a + %s) AS term
-	                        FROM generate_series(%s, %s, %s) a
+                        FROM generate_series(%s, %s, %s) a
                     """
             elif self.field_type == FieldType.BIGINTEGER:
                 if self.include_id:
