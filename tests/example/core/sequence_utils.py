@@ -1,5 +1,5 @@
 import decimal
-from typing import List, Union
+from typing import Iterable, Union
 
 from django.utils import timezone
 
@@ -23,11 +23,11 @@ def _datetimes_using_steps(start_datetime, step, num_steps, strip_time):
         start_datetime += step
 
 
-def _to_sequence_of_datetime_range(datetime_list: List[timezone.datetime], step: timezone.timedelta):
+def _to_sequence_of_datetime_range(datetime_list: Iterable[timezone.datetime], step: timezone.timedelta):
     return ((dt, dt + step) for dt in datetime_list)
 
 
-def _to_sequence_of_date_range(date_list: List[timezone.datetime], step: timezone.timedelta):
+def _to_sequence_of_date_range(date_list: Iterable[timezone.datetime], step: timezone.timedelta):
     return ((dt, (dt + step)) for dt in date_list)
 
 
@@ -105,7 +105,7 @@ def _decimals_using_steps(start, step, num_steps):
         start += step
 
 
-def _to_sequence_of_decimal_range(decimal_list: List[decimal.Decimal], step: Union[decimal.Decimal, int]):
+def _to_sequence_of_decimal_range(decimal_list: Iterable[decimal.Decimal], step: Union[decimal.Decimal, int]):
     return ((dt, (dt + step)) for dt in decimal_list)
 
 
