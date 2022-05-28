@@ -178,7 +178,7 @@ class FromRaw:
             except ValueError:
                 raise ValueError("Invalid interval value. Must be capable of being converted to a numeric type.")
 
-            if not interval_unit in INTERVAL_UNITS:
+            if interval_unit not in INTERVAL_UNITS:
                 raise Exception("Invalid interval unit")
 
     def get_raw_query(self):

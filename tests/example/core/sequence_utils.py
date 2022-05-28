@@ -67,7 +67,7 @@ def get_date_sequence(*args, **kwargs):
     Generates a sequence of dates
         Takes same arguments as get_datetime_sequence
     """
-    if not "strip_time" in locals():
+    if "strip_time" not in locals():
         return get_datetime_sequence(*args, **kwargs, strip_time=True)
     return get_datetime_sequence(*args, **kwargs)
 
@@ -77,7 +77,7 @@ def get_datetime_range_sequence(*args, **kwargs):
     Generates a sequence of datetime ranges
         Takes same arguments as get_datetime_sequence
     """
-    if not "step" in locals():
+    if "step" not in locals():
         step = timezone.timedelta(days=1)
     return _to_sequence_of_datetime_range(get_datetime_sequence(*args, **kwargs), step)
 
@@ -87,7 +87,7 @@ def get_date_range_sequence(*args, **kwargs):
     Generates a sequence of date ranges
         Takes same arguments as get_date_sequence
     """
-    if not "step" in locals():
+    if "step" not in locals():
         step = timezone.timedelta(days=1)
     return _to_sequence_of_date_range(get_date_sequence(*args, **kwargs), step)
 
@@ -137,6 +137,6 @@ def get_decimal_range_sequence(*args, **kwargs):
     Generates a sequence of decimal ranges
         Takes same arguments as get_decimal_sequence
     """
-    if not "step" in locals():
+    if "step" not in locals():
         step = decimal.Decimal("1.00")
     return _to_sequence_of_decimal_range(get_decimal_sequence(*args, **kwargs), step)
