@@ -21,7 +21,7 @@ def get_random_datetime(
 
     time_between_dates = max_date - min_date
     seconds_between_dates = time_between_dates.total_seconds()
-    random_number_of_seconds = random.randrange(seconds_between_dates)
+    random_number_of_seconds = random.randrange(int(seconds_between_dates))
     random_datetime = min_date + timezone.timedelta(seconds=random_number_of_seconds)
     return random_datetime
 
