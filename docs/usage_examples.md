@@ -358,7 +358,7 @@ event_subquery = (
 )
 ```
 
-### Generate and annotate the datetime ranges
+### Generate and annotate the datetime ranges (similar to above, but using '7 days' as step)
 
 ```python
 datetime_range_sequence = (
@@ -419,7 +419,7 @@ ORDER BY
 
 This example is a slight modification of the example above, using the same Event model. Here we are creating histogram buckets with a size of 5, and counting how many events have a number of tickets that falls in a given bucket.
 
-### Create some random events
+### Create some random events (similar to above, but using COUNT)
 
 ```python
 import random

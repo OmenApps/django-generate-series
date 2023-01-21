@@ -50,7 +50,7 @@ This guide assumes you already have [Docker and Docker Compose installed](https:
 Run the following command to build and bring up the postgres service.
 
 ```bash
-docker-compose -f dev.yml up -d --no-deps --force-recreate --build postgres
+docker compose -f dev.yml up -d --no-deps --force-recreate --build postgres
 ```
 
 These are the database connection details:
@@ -72,7 +72,7 @@ Once running, you should be able to connect using the test app, psql, or other P
 #### To completely remove the container and associated data:
 
 ```bash
-docker-compose -f dev.yml down --rmi all --remove-orphans -v
+docker compose -f dev.yml down --rmi all --remove-orphans -v
 ```
 
 ### Once you have a Running Postgres Instance
