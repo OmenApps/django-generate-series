@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
       - uses: actions/checkout@v3
       - run: python -m pip install black
       - run: black -l 119 --check --diff .
@@ -19,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
       - uses: actions/checkout@v3
       - run: python -m pip install isort
       - run: isort --profile=black --line-length=119 .
@@ -27,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/setup-python@v4
+        with:
+          python-version: 3.9
       - uses: actions/checkout@v3
       - run: python -m pip install flake8
       - run: flake8 --max-line-length=119
@@ -69,7 +75,7 @@ jobs:
         run: |
           python -VV
           python -m site
-          poetry run django-admin --version
+          poetry run python manage.py  --version
 
       - name: Run Migrations
         run: python manage.py migrate
