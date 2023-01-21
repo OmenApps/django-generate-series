@@ -75,4 +75,4 @@ jobs:
         run: python manage.py migrate
 
       - name: Run tox
-      - run: python -m tox
+        run: python -m tox
