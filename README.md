@@ -31,19 +31,21 @@ The package includes a `generate_series` function from which you can create your
 - ***start*** - The value at which the sequence should begin (required)
 - ***stop*** - The value at which the sequence should end. For range types, this is the lower value of the final term (required)
 - ***step*** - How many values to step from one term to the next. For range types, this is the step from the lower value of one term to the next. (required for non-integer types)
-- ***span*** - For range types other than date and datetime, this determines the span of the lower value of a term and its upper value (optional, defaults to 1 if neeeded in the query)
-- ***output_field*** - A django model field class, one of BigIntegerField, IntegerField, DecimalField, DateField, DateTimeField, BigIntegerRangeField, IntegerRangeField, DecimalRangeField, DateRangeField, or DateTimeRangeField. (required)
+- ***span*** - When generating a sequence of ranges (except for date and datetime ranges), this specifies the difference between the lower value of each term and its upper value. Typically, this is the same as the `step` value. (optional, defaults to 1 if neeeded in the query)
+- ***output_field*** - A django model field class, one of BigIntegerField, IntegerField, DecimalField, DateField, DateTimeField, BigIntegerRangeField, IntegerRangeField, DecimalRangeField, DateRangeField, or DateTimeRangeField. If not provided, the field will be determined from the type of the `start` input. (optional)
 - ***include_id*** - If set to True, an auto-incrementing `id` field will be added to the QuerySet.
 - ***max_digits*** - For decimal types, specifies the maximum digits
 - ***decimal_places*** - For decimal types, specifies the number of decimal places
 - ***default_bounds*** - In Django 4.1+, allows specifying bounds for list and tuple inputs. See [Django docs](https://docs.djangoproject.com/en/dev/releases/4.1/#django-contrib-postgres)
+- ***queryset*** - If provided, each `pk` in the QuerySet will be combined with the generated series as the cartesian product. This is useful for creating a sequence of dates that are repeated for each `pk` in the QuerySet. (optional, only one of `queryset` or `iterable` can be provided)
+- ***iterable*** - If provided, the iterable will be combined with the generated series as the cartesian product. This is useful for creating a sequence of dates that are repeated for each item in the iterable. (optional, only one of `queryset` or `iterable` can be provided)
 
 ## Basic Examples
 
 ```python
 # Create a bunch of sequential integers
 integer_sequence_queryset = generate_series(
-    0, 1000, output_field=models.IntegerField,
+    start=0, stop=1000, output_field=models.IntegerField,
 )
 
 for item in integer_sequence_queryset:
@@ -74,7 +76,7 @@ now = timezone.now().date()
 later = (now + timezone.timedelta(days=365))
 
 date_sequence_queryset = generate_series(
-    now, later, "1 days", output_field=models.DateField,
+    start=now, stop=later, step="1 days", output_field=models.DateField,
 )
 
 for item in date_sequence_queryset:

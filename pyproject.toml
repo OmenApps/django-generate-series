@@ -1,88 +1,97 @@
 [tool.poetry]
 name = "django-generate-series"
-version = "0.5.0"
+version = "1.0.0b1"
 description = "Use Postgres' generate_series to create sequences with Django's ORM"
 authors = ["Jack Linke <jack@watervize.com>"]
-license = "Apache-2.0"
+license = "MIT"
 readme = "README.md"
 repository = "https://github.com/jacklinke/django-generate-series/"
 documentation = "https://django-generate-series.readthedocs.io/en/latest/"
-keywords = ["sequence", "series", "set", "set-returning", "queryset"]
+keywords = [
+    "sequence",
+    "generating",
+    "series",
+    "set",
+    "set-returning",
+    "queryset",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries",
     "Topic :: Database",
     "Topic :: Utilities",
     "Environment :: Web Environment",
     "Framework :: Django",
-    "Framework :: Django :: 3.2",
-    "Framework :: Django :: 4.0",
-    "Framework :: Django :: 4.1",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
 ]
 
 
 [tool.poetry.dependencies]
-python = ">=3.8,<4.0"
-django = ">=3.2"
+python = ">=3.10,<4.0"
+django = ">=4.2"
 
 [tool.poetry.group.dev]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-black = {version = "^22.3", allow-prereleases = true}
-codecov = ">=2.0"
-coverage = ">=6.0"
-django-extensions = ">=3.0"
-docutils = ">=0.17"
-flake8 = ">=4"
-invoke = "^1.5"
-isort = ">=5.10"
-mock = "^4"
-myst-parser = ">=0.16"
-pre-commit = ">=2.10"
+black = "^24.0"
+codecov = ">=2.1"
+coverage = ">=7.0"
+django-extensions = ">=3.2"
+docutils = ">=0.21"
+flake8 = ">=6"
+invoke = ">=2.0"
+isort = ">=5.13"
+mock = ">=5.0"
+myst-parser = ">=3.0"
+pre-commit = ">=3.7"
 psycopg2-binary = ">=2.9"
-pytest = "^7.0"
-pytest-clarity = "^1.0"
-pytest-cov = ">=3.0"
-pytest-django = "^4"
-pytest-sugar = "^0.9"
-sphinx = ">=4.0"
-sphinxcontrib-mermaid = "^0.7"
-tox = "^4"
-tox-gh-actions = ">=3.0.0"
-twine = ">=3.4"
-Werkzeug = "^2.0"
-wheel = ">=0.37"
-"zest.releaser" = ">=6.22"
+pytest = ">=8.0"
+pytest-cov = ">=4.0"
+pytest-django = ">=4.7"
+pytest-sugar = ">=1.0"
+sphinx = ">=7.0"
+sphinxcontrib-mermaid = ">=0.9"
+tox = ">=4.14"
+tox-gh-actions = ">=3.1.3"
+twine = ">=5.0"
+Werkzeug = ">=3.0"
+wheel = ">=0.43"
+"zest.releaser" = ">=9.0"
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
 isolated_build = true
-envlist = {py38,py39,py310}-django{32,40,41}
+envlist = {py310,py311,py312,py313}-django{42,50,51}
 
 [gh-actions]
 python =
-    3.8: py38-django32, py38-django40, py38-django41
-    3.9: py39-django32, py39-django40, py39-django41
-    3.10: py310-django32, py310-django40, py310-django41
+    3.10: py311-django42, py311-django50, py311-django51
+    3.11: py311-django42, py311-django50, py311-django51
+    3.12: py312-django42, py312-django50, py312-django51
+    3.13: py313-django42, py313-django50, py313-django51
 
 [testenv]
 deps =
-    django32: Django>=3.2,<4.0
-    django40: Django>=4.0,<4.1
-    django41: Django>=4.1,<4.2
+    django42: Django>=4.2,<5.0
+    django50: Django>=5.0,<5.1
+    django51: Django>=5.1,<5.2
 basepython =
-    py38: python3.8
-    py39: python3.9
     py310: python3.10
+    py311: python3.11
+    py312: python3.12
+    py313: python3.13
 allowlist_externals =
     poetry
     bash

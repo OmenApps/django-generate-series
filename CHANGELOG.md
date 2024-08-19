@@ -1,5 +1,14 @@
 # History
 
+## 1.0.0 (2022-04-27)
+
+  * Added ability to generate cartesian products with a QuerySet or an iterable.
+  * Changed license to MIT.
+  * When generating sequences of ranges, if `span` is not provided, it will default to the value of `step` if provided, or 1 if not.
+
+Breaking changes
+
+  * All arguments are now keyword-only.
 
 ## 0.4.3 (2022-04-27)
 

@@ -1,3 +1,20 @@
+"""
+This module provides utility functions to generate sequences of datetimes, dates, and decimals.
+
+Examples:
+    To generate a sequence of 10 datetimes starting from now:
+    >>> from tests.example.core.sequence_utils import get_datetime_sequence
+    >>> datetime_sequence = get_datetime_sequence()
+
+    To generate a sequence of 10 dates starting from now:
+    >>> from tests.example.core.sequence_utils import get_date_sequence
+    >>> date_sequence = get_date_sequence()
+
+    To generate a sequence of 10 decimal values starting from 0.00:
+    >>> from tests.example.core.sequence_utils import get_decimal_sequence
+    >>> decimal_sequence = get_decimal_sequence()
+"""
+
 import decimal
 from typing import Iterable, Union
 

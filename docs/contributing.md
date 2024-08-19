@@ -7,14 +7,36 @@ For development and testing, you can run your own instance of Postgres (either l
 
 ## Getting up-and-running
 
-### Poetry
-
-#### Install requirements
-
-This installs all packages needed for development and testing.
+### Clone the Repository
 
 ```bash
-poetry install
+git clone https://github.com/OmenApps/django-generate-series.git
+```
+
+### Create a Virtual Environment
+
+```bash
+python3 -m venv .venv
+```
+
+### Activate the Virtual Environment
+
+```bash
+source .venv/bin/activate
+```
+
+### Install Poetry if you haven't already
+
+```bash
+pip install --upgrade poetry
+```
+
+### Install requirements with Poetry
+
+Install all packages needed for development and testing.
+
+```bash
+poetry install --with dev
 ```
 
 *Note: You may need to run `poetry update` if there have been minor version updates to required packages.*
@@ -25,7 +47,7 @@ poetry install
 poetry shell
 ```
 
-### Using Your Own postgres Instance
+### Using your own postgres instance
 
 To develop using your own Postgres instance, you may set the following environmental variables on your machine:
 
@@ -41,7 +63,7 @@ The process of setting environmental variables varies between different operatin
 export KEY=value
 ```
 
-### Using the Provided Docker Compose Postgres Instance
+### Using the provided docker compose postgres instance
 
 This guide assumes you already have [Docker and Docker Compose installed](https://docs.docker.com/compose/install/).
 
@@ -50,7 +72,7 @@ This guide assumes you already have [Docker and Docker Compose installed](https:
 Run the following command to build and bring up the postgres service.
 
 ```bash
-docker compose -f dev.yml up -d --no-deps --force-recreate --build postgres
+docker compose up -d --no-deps --force-recreate --build
 ```
 
 These are the database connection details:
@@ -61,10 +83,10 @@ These are the database connection details:
     HOST = postgres
     PORT = 9932
 
-#### To check the status of the database container:
+#### To view logs of the database container:
 
 ```bash
-docker ps
+docker compose logs postgres
 ```
 
 Once running, you should be able to connect using the test app, psql, or other Postgres management tools if desired.
@@ -72,10 +94,10 @@ Once running, you should be able to connect using the test app, psql, or other P
 #### To completely remove the container and associated data:
 
 ```bash
-docker compose -f dev.yml down --rmi all --remove-orphans -v
+docker compose down --rmi all --remove-orphans -v
 ```
 
-### Once you have a Running Postgres Instance
+### Once you have a Running Postgres Instance you can:
 
 
 #### Install pre-commits:
@@ -89,7 +111,7 @@ pre-commit install
 #### Run the tests:
 
 ```bash
-pytest
+python -m pytest
 ```
 
 #### Run code coverage report:

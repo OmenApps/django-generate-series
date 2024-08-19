@@ -8,7 +8,7 @@ Generate a sequence of every third integer from -12 to 12.
 from django.db import models
 from django_generate_series.models import generate_series
 
-integer_sequence = generate_series(-12, 12, 3, output_field=models.IntegerField)
+integer_sequence = generate_series(start=-12, stop=12, step=3, output_field=models.IntegerField)
 
 for item in integer_sequence:
     print(item.term)
@@ -26,7 +26,7 @@ for item in integer_sequence:
 """
 ```
 
-Resulting SQL
+Resulting SQL:
 
 ```sql
 SELECT
@@ -48,7 +48,7 @@ To include the `id` field in any sequence, set `include_id=True`. This does add 
 from django.db import models
 from django_generate_series.models import generate_series
 
-integer_sequence = generate_series(-12, 12, 3, include_id=True, output_field=models.IntegerField)
+integer_sequence = generate_series(start=-12, stop=12, step=3, include_id=True, output_field=models.IntegerField)
 
 for item in integer_sequence:
     print(item.id, item.term)
@@ -66,7 +66,7 @@ for item in integer_sequence:
 """
 ```
 
-Resulting SQL
+Resulting SQL:
 
 ```sql
 SELECT
@@ -92,9 +92,14 @@ Generate a sequence of decimal values, starting from 0.000 and increasing by 1.2
 
 ```python
 import decimal
+from django.db import models
+from django_generate_series.models import generate_series
 
 decimal_sequence = generate_series(
-    decimal.Decimal("0.000"), decimal.Decimal("10.000"), decimal.Decimal("1.234"), output_field=models.DecimalField,
+    start=decimal.Decimal("0.000"),
+    stop=decimal.Decimal("10.000"),
+    step=decimal.Decimal("1.234"),
+    output_field=models.DecimalField,
 )
 
 for item in decimal_sequence:
@@ -113,7 +118,7 @@ for item in decimal_sequence:
 """
 ```
 
-Resulting SQL
+Resulting SQL:
 
 ```sql
 SELECT
@@ -172,7 +177,7 @@ now = now.date()
 
 # Annotate the generated DateTest sequence instances with the annotated Subquery
 date_sequence_queryset = generate_series(
-    previous, now, "2 days", output_field=models.DateField,
+    start=previous, stop=now, step="2 days", output_field=models.DateField,
 ).annotate(daily_order_costs=Subquery(simple_order_subquery))
 
 # Print out all of the SimpleOrder objects (these are randomly generated, so your results may vary)
@@ -238,7 +243,7 @@ for item in date_sequence_queryset:
 """
 ```
 
-The resulting SQL would look something like
+The resulting SQL would look something like:
 
 ```sql
 SELECT
@@ -362,7 +367,7 @@ event_subquery = (
 
 ```python
 datetime_range_sequence = (
-    generate_series(now, later, "7 days", output_field=DateTimeRangeField)
+    generate_series(start=now, stop=later, step="7 days", output_field=DateTimeRangeField)
     .annotate(ticket_quantities=Subquery(event_subquery))
     .order_by("term")
 )
@@ -386,7 +391,7 @@ for item in datetime_range_sequence:
 """
 ```
 
-The resulting SQL would look something like
+The resulting SQL would look something like:
 
 ```sql
 SELECT
@@ -492,11 +497,11 @@ event_subquery = (
 
 ### Generate and annotate the datetime ranges
 
-Here we create 10 buckets with a step and span of 5, from 1 to 50.
+Here we create 10 buckets with a `step` (the difference from one term's lower bound to another term's lower bound) and `span` (the difference between the lower bound and upper bound of each term) of 5, from 1 to 50.
 
 ```python
 datetime_range_sequence = (
-    generate_series(0, 49, 5, 5, output_field=IntegerRangeField)
+    generate_series(start=0, stop=49, step=5, span=5, output_field=IntegerRangeField)
     .annotate(ticket_quantities=Subquery(event_subquery))
     .order_by("term")
 )
@@ -518,7 +523,7 @@ for item in datetime_range_sequence:
 """
 ```
 
-The resulting SQL would look something like
+The resulting SQL would look something like:
 
 ```sql
 SELECT
@@ -541,3 +546,346 @@ FROM
 ORDER BY
   "django_generate_series_integerrangefieldseries"."term" ASC;
 ```
+
+## Using an iterable with the series to get a cartesian product
+
+In this example, we will create a sequence of integers from -12 to 12, stepping by 3, and combine each term with the values in the iterable `["A", "B", "C"]` to create a cartesian product.
+
+```python
+from django.db import models
+from django_generate_series.models import generate_series
+
+integer_sequence_with_cartesian_product = generate_series(
+    start=-12,
+    stop=12,
+    step=3, 
+    output_field=models.IntegerField, 
+    iterable=["A", "B", "C"],
+)
+
+for item in integer_sequence_with_cartesian_product:
+    print(item.term, item.value)
+
+"""
+Example output:
+   term   value (iterable)
+    -12   A
+    -12   B
+    -12   C
+    -9    A
+    -9    B
+    -9    C
+    -6    A
+    -6    B
+    -6    C
+    -3    A
+    -3    B
+    -3    C
+    ...  
+     12   C
+"""
+```
+
+Resulting SQL:  <!-- ToDo: Update this -->
+
+```sql
+SELECT 
+  "django_generate_series_integerfieldseries"."term",
+  "django_generate_series_integerfieldseries"."value" 
+FROM 
+  (
+    WITH series AS (
+      --- 3
+      SELECT 
+        generate_series(-12, 12, 3) term
+    ), 
+    iterable AS (
+      SELECT 
+        UNNEST(ARRAY[ 'A', 'B', 'C' ]) AS value
+    ) 
+    SELECT 
+      series.term, 
+      iterable.value 
+    FROM 
+      series, 
+      iterable
+  ) AS django_generate_series_integerfieldseries
+```
+
+## Using a QuerySet with the series to get a cartesian product
+
+In this example, we will create a sequence of integers from -12 to 12, stepping by 3, and combine each term with the primary key of instances of a model `SomeModel` that meet a condition.
+
+```python
+from django.db import models
+from django_generate_series.models import generate_series
+from tests.example.core.models import SimpleOrder  # Assuming there are instances of SimpleOrder
+
+# Assuming SomeModel has instances and you want to generate a Cartesian product with a series
+simple_order_qs = SimpleOrder.objects.filter(cost__gte=20)
+
+integer_sequence_with_cartesian_product = generate_series(
+    start=-12,
+    stop=12,
+    step=3, 
+    output_field=models.IntegerField, 
+    queryset=simple_order_qs,
+)
+
+for item in integer_sequence_with_cartesian_product:
+    print(item.term, item.value)
+
+"""
+Example output:
+   term   value (pk of SimpleOrder instances)
+    -12   2
+     -9   2
+     -6   2
+     -3   2
+      0   2
+      3   2
+      6   2
+      9   2
+     12   2
+    -12   3
+     -9   3
+     -6   3
+     -3   3
+      0   3
+      3   3
+      6   3
+      9   3
+     12   3
+    ...  
+     12   30
+"""
+```
+
+Resulting SQL:
+
+```sql
+SELECT
+    "django_generate_series_integerfieldseries"."term"
+	,"django_generate_series_integerfieldseries"."value"
+FROM (
+	WITH series AS (
+			--- NULL
+			SELECT generate_series(- 12, 12, 3) term
+			)
+		,queryset_pks AS (
+			SELECT "core_simpleorder"."id"
+			FROM "core_simpleorder"
+			WHERE "core_simpleorder"."cost" >= 20
+			)
+	SELECT series.term
+		,queryset_pks.id AS value
+	FROM series
+		,queryset_pks
+	) AS django_generate_series_integerfieldseries
+```
+
+## Create a set of Histograms using an Iterable with the series to get a cartesian product
+
+This example is a slight modification of the `Create a Histogram` example above, using the same Event model. Here we are creating histogram buckets with a size of 5, and counting how many events have a number of tickets that falls in a given bucket, and then combining each term of the histogram with the values in the iterable `["A", "B", "C"]` to create a cartesian product.
+
+```python
+import random
+from django.contrib.postgres.fields import IntegerRangeField
+from django.db import models
+from django.db.models import OuterRef, Subquery, Count, F, Func
+from django.utils import timezone
+from tests.example.core.random_utils import get_random_datetime
+from tests.example.core.models import Event
+from django_generate_series.models import generate_series
+
+def random_datetime_in_past_month():
+    # Generate a radom date within the past 90 days
+    return get_random_datetime(min_date=timezone.now(), max_timedelta=timezone.timedelta(days=90))
+
+for x in range(0, 30):
+    # Create 30 Event instances with random datetime and a ticket_qty between 1 and 50
+    event = Event.objects.create(
+        event_datetime=random_datetime_in_past_month(),
+        ticket_qty=random.randrange(1, 50),
+    )
+
+# Create a Subquery of annotated Event objects
+
+event_subquery = (
+    Event.objects.filter(ticket_qty__contained_by=OuterRef("term"))
+    .order_by()
+    .annotate(count_of_tickets=Func(F("ticket_qty"), function="COUNT"))
+    .values("count_of_tickets")
+)
+
+# Using Count instead of Sum
+histogram_sequence_with_cartesian_product = generate_series(
+    start=0,
+    stop=49,
+    step=5,
+    span=5,
+    output_field=IntegerRangeField,
+    iterable=["A", "B", "C"],
+).annotate(ticket_quantities=Subquery(event_subquery))
+
+for item in histogram_sequence_with_cartesian_product:
+    print(item.term, item.ticket_quantities, item.value)
+
+""" Example:
+    [0, 5)    None  A
+    [0, 5)    None  B
+    [0, 5)    None  C
+    [5, 10)   1     A
+    [5, 10)   1     B
+    [5, 10)   1     C
+    [10, 15)  2     A
+    [10, 15)  2     B
+    [10, 15)  2     C
+    [15, 20)  5     A
+    [15, 20)  5     B
+    [15, 20)  5     C
+    [20, 25)  3     A
+    [20, 25)  3     B
+    [20, 25)  3     C
+    [25, 30)  4     A
+    [25, 30)  4     B
+    [25, 30)  4     C
+    [30, 35)  3     A
+    [30, 35)  3     B
+    [30, 35)  3     C
+    [35, 40)  4     A
+    [35, 40)  4     B
+    [35, 40)  4     C
+    [40, 45)  4     A
+    [40, 45)  4     B
+    [40, 45)  4     C
+    [45, 50)  4     A
+    [45, 50)  4     B
+    [45, 50)  4     C
+"""
+```
+
+Resulting SQL:  <!-- ToDo: Update this -->
+
+```sql
+SELECT "django_generate_series_integerrangefieldseries"."term"
+	,"django_generate_series_integerrangefieldseries"."value"
+	,(
+		SELECT COUNT(U0."ticket_qty") AS "count_of_tickets"
+		FROM "core_event" U0
+		WHERE U0."ticket_qty" < @("django_generate_series_integerrangefieldseries"."term")::int4range
+		) AS "ticket_quantities"
+FROM (
+	WITH series AS (
+			SELECT int4range(a, a + 5) AS term
+			FROM generate_series(0, 49, 5) a
+			)
+		,iterable AS (
+			SELECT UNNEST(ARRAY ['A','B','C']) AS value
+			)
+	SELECT series.term
+		,iterable.value
+	FROM series
+		,iterable
+	) AS django_generate_series_integerrangefieldseries
+```
+
+## Create a set of Histograms using a QuerySet with the series to get a cartesian product
+
+This example is a slight modification of the `Create a Histogram` example above, using the same Event model. Here we are creating histogram buckets with a size of 5, and counting how many events have a number of tickets that falls in a given bucket, and then combining each term of the histogram with the primary key of instances of a model `SomeModel` that meet a condition.
+
+For the examle output, we are assuming that `SomeModel` is a model in your app with three instances (with `pk` of 1, 2, and 3) that meet the condition `some_condition=True`.
+
+```python
+import random
+from django.contrib.postgres.fields import IntegerRangeField
+from django.db import models
+from django.db.models import OuterRef, Subquery, Count, F, Func
+from django.utils import timezone
+from tests.example.core.random_utils import get_random_datetime
+from tests.example.core.models import Event, SimpleOrder
+from django_generate_series.models import generate_series
+
+def random_datetime_in_past_month():
+    # Generate a radom date within the past 90 days
+    return get_random_datetime(min_date=timezone.now(), max_timedelta=timezone.timedelta(days=90))
+
+for x in range(0, 30):
+    # Create 30 Event instances with random datetime and a ticket_qty between 1 and 50
+    event = Event.objects.create(
+        event_datetime=random_datetime_in_past_month(),
+        ticket_qty=random.randrange(1, 50),
+    )
+
+# Create a Subquery of annotated Event objects
+event_subquery = (
+    Event.objects.filter(ticket_qty__contained_by=OuterRef("term"))
+    .order_by()
+    .annotate(count_of_tickets=Func(F("ticket_qty"), function="COUNT"))
+    .values("count_of_tickets")
+)
+
+# Using Count instead of Sum
+histogram_sequence_with_cartesian_product = generate_series(
+    start=0,
+    stop=49,
+    step=5,
+    span=5,
+    output_field=IntegerRangeField,
+    queryset=SimpleOrder.objects.filter(cost__gte=20),
+)
+
+
+for item in histogram_sequence_with_cartesian_product:
+    print(item.term, item.ticket_quantities, item.value)
+
+""" Example:
+    [0, 5)    None  1
+    [0, 5)    None  2
+    [0, 5)    None  3
+    [5, 10)   1     1
+    [5, 10)   1     2
+    [5, 10)   1     3
+    [10, 15)  2     1
+    [10, 15)  2     2
+    [10, 15)  2     3
+    [15, 20)  5     1
+    [15, 20)  5     2
+    [15, 20)  5     3
+    [20, 25)  3     1
+    [20, 25)  3     2
+    [20, 25)  3     3
+    [25, 30)  4     1
+    [25, 30)  4     2
+    [25, 30)  4     3
+    [30, 35)  3     1
+    [30, 35)  3     2
+    [30, 35)  3     3
+    [35, 40)  4     1
+    [35, 40)  4     2
+    [35, 40)  4     3
+    [40, 45)  4     1
+    [40, 45)  4     2
+    [40, 45)  4     3
+    [45, 50)  4     1
+    [45, 50)  4     2
+    [45, 50)  4     3
+"""
+```
+
+Resulting SQL:  <!-- ToDo: Update this -->
+
+```sql
+WITH series AS (
+    SELECT int4range(a, a + 5) AS term
+    FROM generate_series(0, 49, 5) a
+),
+queryset_pks AS (
+    SELECT "some_model"."id" AS pk
+    FROM "some_model"
+    WHERE "some_model"."some_condition" = True
+)
+SELECT series.term, queryset_pks.pk
+FROM series, queryset_pks;
+```
+
