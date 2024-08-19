@@ -26,7 +26,7 @@ Although this packages is named django-generate-series based on Postgres' [`gene
 
 The package includes a `generate_series` function from which you can create your own series-generating QuerySets. The field type passed into the function as `output_field` determines the resulting type of series that can be created. (Thanks, [@adamchainz](https://twitter.com/adamchainz) for the format suggestion!)
 
-### generate_series arguments
+### generate_series keyword arguments
 
 - ***start*** - The value at which the sequence should begin (required)
 - ***stop*** - The value at which the sequence should end. For range types, this is the lower value of the final term (required)
@@ -97,7 +97,7 @@ Result:
     ...
     2023-04-27
 
-*Note: See [the docs](https://django-generate-series.readthedocs.io/en/latest/usage_examples.html) and the example project in the tests directory for further examples of usage.*
+*Note: See [the usage examples in the docs](https://django-generate-series.readthedocs.io/en/latest/usage_examples.html) and the example project in the tests directory for further examples of usage.*
 
 ## Usage with partial
 
