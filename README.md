@@ -8,7 +8,9 @@ https://django-generate-series.readthedocs.io/
 
 When using Postgres, the set-returning functions allow us to easily create sequences of numbers, dates, datetimes, etc. Unfortunately, this functionality is not currently available within the Django ORM.
 
-This project makes it possible to create such sequences, which can then be used with Django QuerySets. For instance, assuming you have an Order model, you can create a set of sequential dates and then annotate each with the number of orders placed on that date. This will ensure you have no date gaps in the resulting QuerySet. To get the same effect without this package, additional post-processing of the QuerySet with Python would be required.
+This project makes it possible to create such sequences, which are returned as a Django QuerySet. For instance, assuming you have an Order model, you can create a set of sequential dates and then annotate each with the number of orders placed on that date. This will ensure you have no date gaps in the resulting QuerySet. To get the same effect without this package, additional post-processing of the QuerySet with Python would be required.
+
+*New in version 1.0.0*: you can now generate cartesian products with a QuerySet or an iterable. For instance, you can create a sequence of dates that are repeated for each item in a QuerySet or iterable.
 
 ## Terminology
 
@@ -34,16 +36,21 @@ The package includes a `generate_series` function from which you can create your
 - ***span*** - When generating a sequence of ranges (except for date and datetime ranges), this specifies the difference between the lower value of each term and its upper value. Typically, this is the same as the `step` value. (optional, defaults to 1 if neeeded in the query)
 - ***output_field*** - A django model field class, one of BigIntegerField, IntegerField, DecimalField, DateField, DateTimeField, BigIntegerRangeField, IntegerRangeField, DecimalRangeField, DateRangeField, or DateTimeRangeField. If not provided, the field will be determined from the type of the `start` input. (optional)
 - ***include_id*** - If set to True, an auto-incrementing `id` field will be added to the QuerySet.
-- ***max_digits*** - For decimal types, specifies the maximum digits
-- ***decimal_places*** - For decimal types, specifies the number of decimal places
+- ***max_digits*** - For decimal types, specifies the maximum digits.
+- ***decimal_places*** - For decimal types, specifies the number of decimal places.
 - ***default_bounds*** - In Django 4.1+, allows specifying bounds for list and tuple inputs. See [Django docs](https://docs.djangoproject.com/en/dev/releases/4.1/#django-contrib-postgres)
-- ***queryset*** - If provided, each `pk` in the QuerySet will be combined with the generated series as the cartesian product. This is useful for creating a sequence of dates that are repeated for each `pk` in the QuerySet. (optional, only one of `queryset` or `iterable` can be provided)
-- ***iterable*** - If provided, the iterable will be combined with the generated series as the cartesian product. This is useful for creating a sequence of dates that are repeated for each item in the iterable. (optional, only one of `queryset` or `iterable` can be provided)
+- ***queryset*** - If provided, each `pk` in the QuerySet will be combined with the generated series as the cartesian product. This is useful for creating a series that is repeated for each `pk` in the QuerySet. (optional, only one of `queryset` or `iterable` can be provided)
+- ***iterable*** - If provided, the iterable will be combined with the generated series as the cartesian product. This is useful for creating a series that is repeated for each item in the iterable. (optional, only one of `queryset` or `iterable` can be provided)
+
+### generate_series return value
+
+The function returns a QuerySet of the specified type. The QuerySet will have a `term` field that contains the sequence values. If `include_id` is set to True, the QuerySet will also have an `id` field that contains the sequence values. Finally, if `queryset` or `iterable` is provided, the QuerySet will have a `value` field that contains the primary key values from the provided QuerySet or the items in the provided iterable.
 
 ## Basic Examples
 
+### Create a bunch of sequential integers
+
 ```python
-# Create a bunch of sequential integers
 integer_sequence_queryset = generate_series(
     start=0, stop=1000, output_field=models.IntegerField,
 )
@@ -70,8 +77,28 @@ Result:
     ...
     1000
 
+#### `generate_series` returns a QuerySet!
+
+Keep in mind that `generate_series` returns a QuerySet, so you can chain the result with other QuerySet methods, use it in subqueries, filter it, etc. For instance:
+
 ```python
-# Create a sequence of dates from now until a year from now
+for item in integer_sequence_queryset.filter(term__lte=5):
+    print(item.term)
+```
+
+Result:
+
+    term
+    ----
+    0
+    1
+    2
+    3
+    4
+
+### Create a sequence of dates from now until a year from now
+
+```python
 now = timezone.now().date()
 later = (now + timezone.timedelta(days=365))
 
