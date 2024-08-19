@@ -28,7 +28,7 @@ Although this packages is named django-generate-series based on Postgres' [`gene
 
 The package includes a `generate_series` function from which you can create your own series-generating QuerySets. The field type passed into the function as `output_field` determines the resulting type of series that can be created. (Thanks, [@adamchainz](https://twitter.com/adamchainz) for the format suggestion!)
 
-### generate_series keyword arguments
+### `generate_series` keyword arguments
 
 - ***start*** - The value at which the sequence should begin (required)
 - ***stop*** - The value at which the sequence should end. For range types, this is the lower value of the final term (required)
@@ -42,7 +42,7 @@ The package includes a `generate_series` function from which you can create your
 - ***queryset*** - If provided, each `pk` in the QuerySet will be combined with the generated series as the cartesian product. This is useful for creating a series that is repeated for each `pk` in the QuerySet. (optional, only one of `queryset` or `iterable` can be provided)
 - ***iterable*** - If provided, the iterable will be combined with the generated series as the cartesian product. This is useful for creating a series that is repeated for each item in the iterable. (optional, only one of `queryset` or `iterable` can be provided)
 
-### generate_series return value
+### `generate_series` return value
 
 The function returns a QuerySet of the specified type. The QuerySet will have a `term` field that contains the sequence values. If `include_id` is set to True, the QuerySet will also have an `id` field that contains the sequence values. Finally, if `queryset` or `iterable` is provided, the QuerySet will have a `value` field that contains the primary key values from the provided QuerySet or the items in the provided iterable.
 
@@ -51,6 +51,9 @@ The function returns a QuerySet of the specified type. The QuerySet will have a 
 ### Create a bunch of sequential integers
 
 ```python
+from django.db import models
+from django_generate_series.models import generate_series
+
 integer_sequence_queryset = generate_series(
     start=0, stop=1000, output_field=models.IntegerField,
 )
@@ -79,10 +82,10 @@ Result:
 
 #### `generate_series` returns a QuerySet!
 
-Keep in mind that `generate_series` returns a QuerySet, so you can chain the result with other QuerySet methods, use it in subqueries, filter it, etc. For instance:
+Keep in mind that `generate_series` returns a QuerySet, so you can chain the result with other QuerySet methods, use it in subqueries, filter it, etc. For instance, continuing from the previous example:
 
 ```python
-for item in integer_sequence_queryset.filter(term__lte=5):
+for item in integer_sequence_queryset.filter(term__lt=5):
     print(item.term)
 ```
 
@@ -99,6 +102,10 @@ Result:
 ### Create a sequence of dates from now until a year from now
 
 ```python
+from django.db import models
+from django.utils import timezone
+from django_generate_series.models import generate_series
+
 now = timezone.now().date()
 later = (now + timezone.timedelta(days=365))
 
