@@ -23,10 +23,11 @@ from django.db.models import (
     UUIDField,
 )
 from django.utils import timezone
-from psycopg2.extras import DateRange, DateTimeTZRange, NumericRange
+from psycopg.types.range import DateRange, Int4Range, NumericRange, TimestamptzRange as DateTimeTZRange
 
 from django_generate_series.exceptions import ModelFieldNotSupported
 from django_generate_series.models import (
+    _build_model_class_name,
     _get_auto_field,
     _make_model_class,
     generate_series,
@@ -651,16 +652,16 @@ class TestIntegerRangeModel:
         integer_range_test_sum = integer_range_test.aggregate(int_sum=Count("term"))
         assert integer_range_test_sum["int_sum"] == 10
 
-        assert integer_range_test.filter(term__contains=NumericRange(1, 2)).count() == 1
+        assert integer_range_test.filter(term__contains=Int4Range(1, 2)).count() == 1
 
     def test_integerfield_concrete_instances(self):
         """Make sure we can create a QuerySet and perform basic operations."""
         integer_range_test = generate_series(start=0, stop=9, output_field=IntegerRangeField)
-        integer_range_sequence = tuple(NumericRange(idx, idx + 1, "[)") for idx in range(0, 10))
+        integer_range_sequence = tuple(Int4Range(idx, idx + 1, "[)") for idx in range(0, 10))
 
         assert integer_range_test.first().term == integer_range_sequence[0]
         assert integer_range_test.get(term__overlap=(0, 1)) == integer_range_test.first()
-        assert integer_range_test.first().term == NumericRange(0, 1, "[)")
+        assert integer_range_test.first().term == Int4Range(0, 1, "[)")
         assert integer_range_test.last().term == integer_range_sequence[-1]
 
         for item in integer_range_sequence:
@@ -1293,6 +1294,11 @@ class TestTypeChecking:
         """Test that an exception is raised when an invalid field is passed."""
         with pytest.raises(ModelFieldNotSupported):
             get_type_checking_dict(models.CharField)
+
+    def test_get_value_field_class_with_queryset(self):
+        """Test that the correct value field is returned for a queryset."""
+        qs = ConcreteIntegerTest.objects.all()
+        assert get_value_field_class(qs, None) == models.BigAutoField
 
 
 @pytest.mark.django_db
