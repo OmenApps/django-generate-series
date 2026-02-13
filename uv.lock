@@ -6,9 +6,6 @@ resolution-markers = [
     "python_full_version < '3.12'",
 ]
 
-[options]
-prerelease-mode = "allow"
-
 [[package]]
 name = "accessible-pygments"
 version = "0.0.5"
@@ -466,7 +463,7 @@ wheels = [
 
 [[package]]
 name = "django-generate-series"
-version = "1.0.0b1"
+version = "2026.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "django", version = "5.2.11", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },

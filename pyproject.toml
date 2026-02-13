@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-generate-series"
-version = "1.0.0b1"
+version = "2026.2.1"
 description = "Use Postgres' generate_series to create sequences with Django's ORM"
 authors = [{ name = "Jack Linke", email = "jack@watervize.com" }]
 license = "MIT"
