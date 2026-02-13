@@ -132,9 +132,11 @@ FROM
 
 ## Get summed costs for orders placed every other day over the past month
 
-Given a model like this (included in tests.example.core.models):
+Given a model like this:
 
 ```python
+from django.db import models
+
 class SimpleOrder(models.Model):
     order_date = models.DateField()
     cost = models.IntegerField()
@@ -144,23 +146,18 @@ In this example, we want to get the summed costs for orders placed on every othe
 
 ```python
 import random
+from datetime import timedelta
 from django.db.models import OuterRef, Subquery, Sum
-from tests.example.core.random_utils import get_random_date
-from tests.example.core.models import SimpleOrder
+from django.utils import timezone
 
 # Get the current datetime and the datetime 30 days ago
 now = timezone.now()
-previous = now - timezone.timedelta(days=30)
-
-def random_date_in_past_month():
-    # Generate a radom date within the past 30 days
-    return get_random_date(min_date=previous, max_timedelta=timezone.timedelta(days=30))
+previous = now - timedelta(days=30)
 
 for x in range(0, 30):
     # Create 30 SimpleOrder instances with random date and a cost between $1 and $50
-    SimpleOrder.objects.create(
-        order_date=random_date_in_past_month(), cost=random.randrange(1, 50)
-    )
+    random_date = (previous + timedelta(days=random.randint(0, 30))).date()
+    SimpleOrder.objects.create(order_date=random_date, cost=random.randrange(1, 50))
 
 # Create a Subquery of annotated SimpleOrder objects
 simple_order_subquery = (
@@ -272,9 +269,11 @@ This example creates a sequence of date ranges, each seven day in length from to
 
 Note the use of `Func` here bypasses Django's default 'group by' functionality, which allows us to select rows that fall within an entire range. Normally, django would try to group by specific matches, but we want to match anything that is contained within each range. (Thanks [@niccolomineo](https://twitter.com/niccolomineo) for the tip!)
 
-Given a model like this (included in tests.example.core.models).
+Given a model like this:
 
 ```python
+from django.db import models
+
 class Event(models.Model):
     event_datetime = models.DateTimeField()
     ticket_qty = models.IntegerField()
@@ -284,27 +283,21 @@ class Event(models.Model):
 
 ```python
 import random
+from datetime import timedelta
 from django.contrib.postgres.fields import DateTimeRangeField
 from django.db.models import OuterRef, Subquery, Sum
 from django.utils import timezone
-from tests.example.core.random_utils import get_random_datetime
-from tests.example.core.models import Event
 from django_generate_series.models import generate_series
 
-# Get the current datetime and the datetime 90 days ago
+# Get the current datetime and the datetime 90 days from now
 now = timezone.now()
-later = (now + timezone.timedelta(days=90))
-
-def random_datetime_in_past_month():
-    # Generate a radom date within the past 90 days
-    return get_random_datetime(min_date=now, max_timedelta=timezone.timedelta(days=90))
+later = now + timedelta(days=90)
+SECONDS_IN_90_DAYS = 90 * 24 * 3600
 
 for x in range(0, 30):
     # Create 30 Event instances with random datetime and a ticket_qty between 1 and 5
-    event = Event.objects.create(
-        event_datetime=random_datetime_in_past_month(),
-        ticket_qty=random.randrange(1, 5),
-    )
+    random_dt = now + timedelta(seconds=random.randint(0, SECONDS_IN_90_DAYS))
+    Event.objects.create(event_datetime=random_dt, ticket_qty=random.randrange(1, 5))
 
 # Create a Subquery of annotated Event objects
 for item in Event.objects.all().order_by("event_datetime"):
@@ -428,25 +421,20 @@ This example is a slight modification of the example above, using the same Event
 
 ```python
 import random
+from datetime import timedelta
 from django.contrib.postgres.fields import IntegerRangeField
 from django.db import models
 from django.db.models import OuterRef, Subquery, Count
 from django.utils import timezone
-from tests.example.core.random_utils import get_random_datetime
-from tests.example.core.models import Event
 from django_generate_series.models import generate_series
 
-
-def random_datetime_in_past_month():
-    # Generate a radom date within the past 90 days
-    return get_random_datetime(min_date=timezone.now(), max_timedelta=timezone.timedelta(days=90))
+now = timezone.now()
+SECONDS_IN_90_DAYS = 90 * 24 * 3600
 
 for x in range(0, 30):
     # Create 30 Event instances with random datetime and a ticket_qty between 1 and 50
-    event = Event.objects.create(
-        event_datetime=random_datetime_in_past_month(),
-        ticket_qty=random.randrange(1, 50),
-    )
+    random_dt = now + timedelta(seconds=random.randint(0, SECONDS_IN_90_DAYS))
+    Event.objects.create(event_datetime=random_dt, ticket_qty=random.randrange(1, 50))
 
 # Create a Subquery of annotated Event objects
 for item in Event.objects.all().order_by("ticket_qty"):
@@ -619,9 +607,8 @@ In this example, we will create a sequence of integers from -12 to 12, stepping 
 ```python
 from django.db import models
 from django_generate_series.models import generate_series
-from tests.example.core.models import SimpleOrder  # Assuming there are instances of SimpleOrder
 
-# Assuming SomeModel has instances and you want to generate a Cartesian product with a series
+# Assuming there are SimpleOrder instances (see model definition above)
 simple_order_qs = SimpleOrder.objects.filter(cost__gte=20)
 
 integer_sequence_with_cartesian_product = generate_series(
@@ -690,27 +677,22 @@ This example is a slight modification of the `Create a Histogram` example above,
 
 ```python
 import random
+from datetime import timedelta
 from django.contrib.postgres.fields import IntegerRangeField
 from django.db import models
 from django.db.models import OuterRef, Subquery, Count, F, Func
 from django.utils import timezone
-from tests.example.core.random_utils import get_random_datetime
-from tests.example.core.models import Event
 from django_generate_series.models import generate_series
 
-def random_datetime_in_past_month():
-    # Generate a radom date within the past 90 days
-    return get_random_datetime(min_date=timezone.now(), max_timedelta=timezone.timedelta(days=90))
+now = timezone.now()
+SECONDS_IN_90_DAYS = 90 * 24 * 3600
 
 for x in range(0, 30):
     # Create 30 Event instances with random datetime and a ticket_qty between 1 and 50
-    event = Event.objects.create(
-        event_datetime=random_datetime_in_past_month(),
-        ticket_qty=random.randrange(1, 50),
-    )
+    random_dt = now + timedelta(seconds=random.randint(0, SECONDS_IN_90_DAYS))
+    Event.objects.create(event_datetime=random_dt, ticket_qty=random.randrange(1, 50))
 
 # Create a Subquery of annotated Event objects
-
 event_subquery = (
     Event.objects.filter(ticket_qty__contained_by=OuterRef("term"))
     .order_by()
@@ -798,24 +780,20 @@ For the examle output, we are assuming that `SomeModel` is a model in your app w
 
 ```python
 import random
+from datetime import timedelta
 from django.contrib.postgres.fields import IntegerRangeField
 from django.db import models
 from django.db.models import OuterRef, Subquery, Count, F, Func
 from django.utils import timezone
-from tests.example.core.random_utils import get_random_datetime
-from tests.example.core.models import Event, SimpleOrder
 from django_generate_series.models import generate_series
 
-def random_datetime_in_past_month():
-    # Generate a radom date within the past 90 days
-    return get_random_datetime(min_date=timezone.now(), max_timedelta=timezone.timedelta(days=90))
+now = timezone.now()
+SECONDS_IN_90_DAYS = 90 * 24 * 3600
 
 for x in range(0, 30):
     # Create 30 Event instances with random datetime and a ticket_qty between 1 and 50
-    event = Event.objects.create(
-        event_datetime=random_datetime_in_past_month(),
-        ticket_qty=random.randrange(1, 50),
-    )
+    random_dt = now + timedelta(seconds=random.randint(0, SECONDS_IN_90_DAYS))
+    Event.objects.create(event_datetime=random_dt, ticket_qty=random.randrange(1, 50))
 
 # Create a Subquery of annotated Event objects
 event_subquery = (
