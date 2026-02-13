@@ -248,12 +248,12 @@ class SeriesQueryGenerator:
                     "term"
                 FROM
                     (
-                        SELECT int8range(a, a + %s) AS term
+                        SELECT int8range(a, a + %s)::int8range AS term
                         FROM generate_series(%s, %s, %s) a
                     ) AS subquery
             """
         return """
-            SELECT int8range(a, a + %s) AS term
+            SELECT int8range(a, a + %s)::int8range AS term
             FROM generate_series(%s, %s, %s) a
         """
 
@@ -266,12 +266,12 @@ class SeriesQueryGenerator:
                     "term"
                 FROM
                     (
-                        SELECT int4range(a, a + %s) AS term
+                        SELECT int4range(a, a + %s)::int4range AS term
                         FROM generate_series(%s, %s, %s) a
                     ) AS seriesquery
             """
         return """
-            SELECT int4range(a, a + %s) AS term
+            SELECT int4range(a, a + %s)::int4range AS term
             FROM generate_series(%s, %s, %s) a
         """
 
@@ -538,9 +538,6 @@ def _make_model_class(
         "__module__": __name__,
     }
 
-    if queryset or iterable:
-        pass
-
     if not is_supported_field(output_field):
         raise ModelFieldNotSupported("Invalid model field type used to generate series")
 
@@ -566,8 +563,30 @@ def _make_model_class(
         )
         model_dict["value"] = value_field(**value_dict)
 
+    class_name = _build_model_class_name(output_field, include_id, max_digits, decimal_places, default_bounds,
+                                         queryset, iterable)
+
     return type(
-        f"{output_field.__name__}Series",
+        class_name,
         (AbstractSeriesModel,),
         model_dict,
     )
+
+
+def _build_model_class_name(output_field, include_id, max_digits, decimal_places, default_bounds, queryset, iterable):
+    """Build a unique model class name based on the parameters that affect model structure."""
+    parts = [output_field.__name__, "Series"]
+    if include_id:
+        parts.append("Id")
+    if max_digits is not None:
+        parts.append(f"Md{max_digits}")
+    if decimal_places is not None:
+        parts.append(f"Dp{decimal_places}")
+    if default_bounds is not None:
+        bounds_str = default_bounds.replace("[", "I").replace("]", "I").replace("(", "E").replace(")", "E")
+        parts.append(f"Bd{bounds_str}")
+    if queryset is not None:
+        parts.append("Qs")
+    if iterable is not None:
+        parts.append("It")
+    return "".join(parts)
