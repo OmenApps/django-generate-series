@@ -121,15 +121,15 @@ Result:
 
     term
     ----
-    2022-04-27
-    2022-04-28
-    2022-04-29
-    2022-04-30
-    2022-05-01
-    2022-05-02
-    2022-05-03
+    2026-04-27
+    2026-04-28
+    2026-04-29
+    2026-04-30
+    2026-05-01
+    2026-05-02
+    2026-05-03
     ...
-    2023-04-27
+    2027-04-27
 
 *Note: See [the usage examples in the docs](https://django-generate-series.readthedocs.io/en/latest/usage_examples.html) and the example project in the tests directory for further examples of usage.*
 
