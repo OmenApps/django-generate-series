@@ -1,11 +1,6 @@
-version: '3'
-
-volumes:
-  postgres_data: {}
-
 services:
   postgres:
-    image: postgres:16
+    image: postgres:17
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -16,3 +11,6 @@ services:
       - POSTGRES_USER=docker
       - POSTGRES_PASSWORD=docker
       - POSTGRES_HOST=postgres
+
+volumes:
+  postgres_data: {}
