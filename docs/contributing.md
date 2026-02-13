@@ -2,7 +2,7 @@
 
 We welcome contributions that meet the goals and standards of this project. Contributions may include bug fixes, feature development, corrections or additional context for the documentation, submission of Issues on GitHub, etc.
 
-For development and testing, you can run your own instance of Postgres (either locally or using a DBaaS), or you can use the provided Docker Compose yaml file to provision a containerized instance and data volume locally.
+For development and testing, you can run your own instance of Postgres (either locally or using a DBaaS), or you can use the provided Docker Compose yaml file to provision a containerized PostgreSQL instance locally.
 
 
 ## Getting up-and-running
@@ -11,40 +11,21 @@ For development and testing, you can run your own instance of Postgres (either l
 
 ```bash
 git clone https://github.com/OmenApps/django-generate-series.git
+cd django-generate-series
 ```
 
-### Create a Virtual Environment
+### Install uv
+
+If you don't already have [uv](https://docs.astral.sh/uv/) installed:
 
 ```bash
-python3 -m venv .venv
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Activate the Virtual Environment
+### Install dependencies
 
 ```bash
-source .venv/bin/activate
-```
-
-### Install Poetry if you haven't already
-
-```bash
-pip install --upgrade poetry
-```
-
-### Install requirements with Poetry
-
-Install all packages needed for development and testing.
-
-```bash
-poetry install --with dev
-```
-
-*Note: You may need to run `poetry update` if there have been minor version updates to required packages.*
-
-#### Start poetry environment in shell
-
-```bash
-poetry shell
+uv sync --extra dev --prerelease=allow
 ```
 
 ### Using your own postgres instance
@@ -67,12 +48,10 @@ export KEY=value
 
 This guide assumes you already have [Docker and Docker Compose installed](https://docs.docker.com/compose/install/).
 
-#### Build & Bring up the Docker Compose container for Postgres services:
-
-Run the following command to build and bring up the postgres service.
+#### Start the PostgreSQL service:
 
 ```bash
-docker compose up -d --no-deps --force-recreate --build
+docker compose up -d
 ```
 
 These are the database connection details:
@@ -80,7 +59,7 @@ These are the database connection details:
     DB = postgres
     USER = docker
     PASSWORD = docker
-    HOST = postgres
+    HOST = localhost
     PORT = 9932
 
 #### To view logs of the database container:
@@ -105,43 +84,47 @@ docker compose down --rmi all --remove-orphans -v
 These ensure code is formatted correctly upon commit. See [the pre-commit docs](https://pre-commit.com/) for more information.
 
 ```bash
-pre-commit install
+uv run pre-commit install
 ```
 
 #### Run the tests:
 
 ```bash
-python -m pytest
+uv run pytest
+```
+
+#### Run the full test matrix via nox:
+
+```bash
+uv run nox --session=tests
 ```
 
 #### Run code coverage report:
 
 ```bash
-coverage run -m pytest
+uv run nox --session=coverage
 ```
 
-#### Create html coverage report:
+#### Run linting:
 
 ```bash
-coverage html
+uv run nox --session=pre-commit
 ```
 
 #### Check the django test project:
 
 ```bash
-python manage.py check
+uv run python manage.py check
 ```
 
 #### To run the example project in the python REPL:
 
 ```bash
-python manage.py shell_plus
+uv run python manage.py shell_plus
 ```
 
 ## Build the docs
 
-Within the docs directory, run this from the console:
-
 ```bash
-make html
+uv run nox --session=docs-build
 ```

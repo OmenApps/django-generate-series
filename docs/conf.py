@@ -11,7 +11,7 @@ django.setup()
 
 project = "django-generate-series"
 author = "Jack Linke"
-copyright = "2024, Jack Linke"
+copyright = "2026, Jack Linke"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
