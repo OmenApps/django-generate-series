@@ -38,7 +38,7 @@ The package includes a `generate_series` function from which you can create your
 - ***include_id*** - If set to True, an auto-incrementing `id` field will be added to the QuerySet.
 - ***max_digits*** - For decimal types, specifies the maximum digits.
 - ***decimal_places*** - For decimal types, specifies the number of decimal places.
-- ***default_bounds*** - In Django 4.1+, allows specifying bounds for list and tuple inputs. See [Django docs](https://docs.djangoproject.com/en/dev/releases/4.1/#django-contrib-postgres)
+- ***default_bounds*** - In Django 4.2+, allows specifying bounds for list and tuple inputs. See [Django docs](https://docs.djangoproject.com/en/stable/ref/contrib/postgres/fields/#django.contrib.postgres.fields.RangeField)
 - ***queryset*** - If provided, each `pk` in the QuerySet will be combined with the generated series as the cartesian product. This is useful for creating a series that is repeated for each `pk` in the QuerySet. (optional, only one of `queryset` or `iterable` can be provided)
 - ***iterable*** - If provided, the iterable will be combined with the generated series as the cartesian product. This is useful for creating a series that is repeated for each item in the iterable. (optional, only one of `queryset` or `iterable` can be provided)
 
