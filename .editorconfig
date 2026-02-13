@@ -1,5 +1,3 @@
-# http://editorconfig.org
-
 root = true
 
 [*]
@@ -8,17 +6,10 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
-[*.{py,rst,ini,html,css,scss,json,xml}]
+[*.{py,toml}]
 indent_style = space
 indent_size = 4
 
-[*.{yml}]
+[*.{yml,yaml,json}]
 indent_style = space
 indent_size = 2
-
-[*.md]
-trim_trailing_whitespace = false
-
-[Makefile]
-indent_style = tab
-
