@@ -1,5 +1,5 @@
 """
-This module provides utility functions to generate sequences of datetimes, dates, and decimals.
+This module provides utility functions to generate sequences of datetimes and dates.
 
 Examples:
     To generate a sequence of 10 datetimes starting from now:
@@ -9,14 +9,7 @@ Examples:
     To generate a sequence of 10 dates starting from now:
     >>> from tests.example.core.sequence_utils import get_date_sequence
     >>> date_sequence = get_date_sequence()
-
-    To generate a sequence of 10 decimal values starting from 0.00:
-    >>> from tests.example.core.sequence_utils import get_decimal_sequence
-    >>> decimal_sequence = get_decimal_sequence()
 """
-
-import decimal
-from typing import Iterable, Union
 
 from django.utils import timezone
 
@@ -40,23 +33,15 @@ def _datetimes_using_steps(start_datetime, step, num_steps, strip_time):
         start_datetime += step
 
 
-def _to_sequence_of_datetime_range(datetime_list: Iterable[timezone.datetime], step: timezone.timedelta):
-    return ((dt, dt + step) for dt in datetime_list)
-
-
-def _to_sequence_of_date_range(date_list: Iterable[timezone.datetime], step: timezone.timedelta):
-    return ((dt, (dt + step)) for dt in date_list)
-
-
 def get_datetime_sequence(
-    start_datetime: timezone.datetime = timezone.now(),
-    step: timezone.timedelta = timezone.timedelta(days=1),
-    end_datetime: timezone.datetime = None,
-    num_steps: int = 10,
-    strip_time: bool = False,
+    start_datetime=None,
+    step=None,
+    end_datetime=None,
+    num_steps=10,
+    strip_time=False,
 ):
     """
-    Generates a sequential tuple of datimetimes from start_datetime to either end_datetime
+    Generates a sequential tuple of datetimes from start_datetime to either end_datetime
       or over the number of steps, defaulting to 10 steps if neither is provided.
 
     start_datetime: defaults to timezone.now()
@@ -64,6 +49,10 @@ def get_datetime_sequence(
     end_datetime: timezone.datetime or None
     num_steps: defaults to 10 if not provided
     """
+    if start_datetime is None:
+        start_datetime = timezone.now()
+    if step is None:
+        step = timezone.timedelta(days=1)
 
     if end_datetime is not None:
         # Using end_datetime
@@ -81,79 +70,8 @@ def get_datetime_sequence(
 
 def get_date_sequence(*args, **kwargs):
     """
-    Generates a sequence of dates
-        Takes same arguments as get_datetime_sequence
+    Generates a sequence of dates.
+        Takes same arguments as get_datetime_sequence.
     """
-    if "strip_time" not in locals():
-        return get_datetime_sequence(*args, **kwargs, strip_time=True)
+    kwargs.setdefault("strip_time", True)
     return get_datetime_sequence(*args, **kwargs)
-
-
-def get_datetime_range_sequence(*args, **kwargs):
-    """
-    Generates a sequence of datetime ranges
-        Takes same arguments as get_datetime_sequence
-    """
-    if "step" not in locals():
-        step = timezone.timedelta(days=1)
-    return _to_sequence_of_datetime_range(get_datetime_sequence(*args, **kwargs), step)
-
-
-def get_date_range_sequence(*args, **kwargs):
-    """
-    Generates a sequence of date ranges
-        Takes same arguments as get_date_sequence
-    """
-    if "step" not in locals():
-        step = timezone.timedelta(days=1)
-    return _to_sequence_of_date_range(get_date_sequence(*args, **kwargs), step)
-
-
-def _decimals_using_end(start, step, end):
-    while start <= end:
-        yield start
-        start += step
-
-
-def _decimals_using_steps(start, step, num_steps):
-    while num_steps > 0:
-        yield start
-        num_steps -= 1
-        start += step
-
-
-def _to_sequence_of_decimal_range(decimal_list: Iterable[decimal.Decimal], step: Union[decimal.Decimal, int]):
-    return ((dt, (dt + step)) for dt in decimal_list)
-
-
-def get_decimal_sequence(
-    start: decimal.Decimal = decimal.Decimal("0.00"),
-    step: Union[decimal.Decimal, int] = decimal.Decimal("1.00"),
-    end: decimal.Decimal = None,
-    num_steps: decimal.Decimal = decimal.Decimal("10.00"),
-):
-    """
-    Generates a sequence of decimals
-    """
-    if end is not None:
-        # Using end
-        if not start < end:
-            raise ValueError("If an end_value is provided, it must be greater than start")
-        decimals = (dt for dt in _decimals_using_end(start, step, end))
-    else:
-        # Using num_steps
-        if num_steps < 0:
-            raise ValueError("If a num_steps value is provided, it must be positive")
-        decimals = (dt for dt in _decimals_using_steps(start, step, num_steps))
-
-    return decimals
-
-
-def get_decimal_range_sequence(*args, **kwargs):
-    """
-    Generates a sequence of decimal ranges
-        Takes same arguments as get_decimal_sequence
-    """
-    if "step" not in locals():
-        step = decimal.Decimal("1.00")
-    return _to_sequence_of_decimal_range(get_decimal_sequence(*args, **kwargs), step)

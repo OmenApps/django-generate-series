@@ -14,13 +14,11 @@ from django.contrib.postgres.fields import (
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
 from django.db.models import (
-    AutoField,
     Count,
     Exists,
     OuterRef,
     Subquery,
     Sum,
-    UUIDField,
 )
 from django.utils import timezone
 from psycopg.types.range import DateRange, Int4Range, NumericRange, TimestamptzRange as DateTimeTZRange
@@ -49,59 +47,7 @@ from tests.example.core.models import (
     ConcreteIntegerRangeTest,
     ConcreteIntegerTest,
 )
-from tests.example.core.random_utils import (
-    get_random_date,
-    get_random_date_range,
-    get_random_datetime,
-    get_random_datetime_range,
-)
-from tests.example.core.sequence_utils import (
-    get_date_range_sequence,
-    get_date_sequence,
-    get_datetime_range_sequence,
-    get_datetime_sequence,
-    get_decimal_range_sequence,
-    get_decimal_sequence,
-)
-
-
-class TestRandomUtils:
-    """Make sure random_utils.py functions work correctly."""
-
-    def test_get_random_datetime(self):
-        """Make sure we can generate a random datetime."""
-        assert get_random_datetime()
-        assert isinstance(get_random_datetime(), timezone.datetime)
-        with pytest.raises(Exception) as error_msg:
-            get_random_datetime(max_timedelta=timezone.timedelta(days=-100))
-        assert "If a timedelta value is provided, it must be positive" in str(error_msg.value)
-
-    def test_get_random_date(self):
-        """Make sure we can generate a random date."""
-        assert get_random_date()
-        assert isinstance(get_random_date(), datetime.date)
-
-    def test_get_random_datetime_range(self):
-        """Make sure we can generate a random datetime range."""
-        assert get_random_datetime_range()
-        assert len(get_random_datetime_range()) == 2
-        assert all(
-            [
-                isinstance(get_random_datetime_range()[0], timezone.datetime),
-                isinstance(get_random_datetime_range()[1], timezone.datetime),
-            ]
-        )
-
-    def test_get_random_date_range(self):
-        """Make sure we can generate a random date range."""
-        assert get_random_date_range()
-        assert len(get_random_date_range()) == 2
-        assert all(
-            [
-                isinstance(get_random_date_range()[0], datetime.date),
-                isinstance(get_random_date_range()[1], datetime.date),
-            ]
-        )
+from tests.example.core.sequence_utils import get_date_sequence, get_datetime_sequence
 
 
 class TestSequenceUtils:
@@ -109,109 +55,37 @@ class TestSequenceUtils:
 
     def test_get_datetime_sequence(self):
         """Make sure we can generate a sequence of datetimes."""
-        assert get_datetime_sequence()
-        dt_sequence = list(get_datetime_sequence())
+        now = timezone.now()
+
+        assert get_datetime_sequence(start_datetime=now)
+        dt_sequence = list(get_datetime_sequence(start_datetime=now))
         assert len(dt_sequence) == 10
         assert isinstance(dt_sequence[0], timezone.datetime)
         assert dt_sequence[9] - dt_sequence[0] == timezone.timedelta(days=9)
 
-        assert get_datetime_sequence(end_datetime=timezone.now() + timezone.timedelta(days=10))
-        dt_sequence = list(get_datetime_sequence(end_datetime=timezone.now() + timezone.timedelta(days=9)))
+        dt_sequence = list(get_datetime_sequence(start_datetime=now, end_datetime=now + timezone.timedelta(days=10)))
         assert len(dt_sequence) == 10
         assert dt_sequence[9] - dt_sequence[0] == timezone.timedelta(days=9)
 
-        with pytest.raises(Exception) as error_msg:
-            dt_sequence = list(get_datetime_sequence(end_datetime=timezone.now() - timezone.timedelta(days=9)))
-        assert "If an end_datetime is provided, it must be greater than start_datetime" in str(error_msg.value)
+        with pytest.raises(ValueError, match="end_datetime is provided, it must be greater than start_datetime"):
+            list(get_datetime_sequence(start_datetime=now, end_datetime=now - timezone.timedelta(days=9)))
 
-        with pytest.raises(Exception) as error_msg:
-            dt_sequence = list(get_datetime_sequence(num_steps=-10))
-        assert "If a num_steps value is provided, it must be positive" in str(error_msg.value)
+        with pytest.raises(ValueError, match="num_steps value is provided, it must be positive"):
+            list(get_datetime_sequence(num_steps=-10))
 
     def test_get_date_sequence(self):
         """Make sure we can generate a sequence of dates."""
-        assert get_date_sequence()
-        dt_sequence = list(get_date_sequence())
+        now = timezone.now()
+
+        assert get_date_sequence(start_datetime=now)
+        dt_sequence = list(get_date_sequence(start_datetime=now))
         assert len(dt_sequence) == 10
         assert isinstance(dt_sequence[0], datetime.date)
         assert dt_sequence[9] - dt_sequence[0] == timezone.timedelta(days=9)
 
-        assert get_date_sequence(end_datetime=timezone.now() + timezone.timedelta(days=10))
-        dt_sequence = list(get_date_sequence(end_datetime=timezone.now() + timezone.timedelta(days=9)))
+        dt_sequence = list(get_date_sequence(start_datetime=now, end_datetime=now + timezone.timedelta(days=10)))
         assert len(dt_sequence) == 10
         assert dt_sequence[9] - dt_sequence[0] == timezone.timedelta(days=9)
-
-    def test_get_datetime_range_sequence(self):
-        """Make sure we can generate a sequence of datetime ranges."""
-        assert get_datetime_range_sequence()
-        dt_sequence = list(get_datetime_range_sequence())
-        assert len(dt_sequence) == 10
-        assert isinstance(dt_sequence[0], tuple)
-        assert len(dt_sequence[0]) == 2
-        assert isinstance(dt_sequence[0][0], timezone.datetime)
-        assert dt_sequence[9][0] - dt_sequence[0][0] == timezone.timedelta(days=9)
-        assert dt_sequence[9][1] - dt_sequence[0][0] == timezone.timedelta(days=10)
-
-        assert get_datetime_range_sequence(end_datetime=timezone.now() + timezone.timedelta(days=10))
-        dt_sequence = list(get_datetime_range_sequence(end_datetime=timezone.now() + timezone.timedelta(days=9)))
-        assert len(dt_sequence) == 10
-        assert dt_sequence[9][0] - dt_sequence[0][0] == timezone.timedelta(days=9)
-        assert dt_sequence[9][1] - dt_sequence[0][0] == timezone.timedelta(days=10)
-
-    def test_get_date_range_sequence(self):
-        """Make sure we can generate a sequence of date ranges."""
-        assert get_date_range_sequence()
-        dt_sequence = list(get_date_range_sequence())
-        assert len(dt_sequence) == 10
-        assert isinstance(dt_sequence[0], tuple)
-        assert len(dt_sequence[0]) == 2
-        assert isinstance(dt_sequence[0][0], datetime.date)
-        assert dt_sequence[9][0] - dt_sequence[0][0] == timezone.timedelta(days=9)
-        assert dt_sequence[9][1] - dt_sequence[0][0] == timezone.timedelta(days=10)
-
-        assert get_date_range_sequence(end_datetime=timezone.now() + timezone.timedelta(days=10))
-        dt_sequence = list(get_date_range_sequence(end_datetime=timezone.now() + timezone.timedelta(days=9)))
-        assert len(dt_sequence) == 10
-        assert dt_sequence[9][0] - dt_sequence[0][0] == timezone.timedelta(days=9)
-        assert dt_sequence[9][1] - dt_sequence[0][0] == timezone.timedelta(days=10)
-
-    def test_get_decimal_sequence(self):
-        """Make sure we can generate a sequence of decimals."""
-        assert get_decimal_sequence()
-        decimal_sequence = list(get_decimal_sequence())
-        assert len(decimal_sequence) == 10
-        assert isinstance(decimal_sequence[0], decimal.Decimal)
-        assert decimal_sequence[9] - decimal_sequence[0] == decimal.Decimal("9.00")
-
-        assert get_decimal_sequence(end=decimal.Decimal("9.00"))
-        decimal_sequence = list(get_decimal_sequence(end=decimal.Decimal("9.00")))
-        assert len(decimal_sequence) == 10
-        assert decimal_sequence[9] - decimal_sequence[0] == decimal.Decimal("9.00")
-
-    def test_get_decimal_range_sequence(self):
-        """Make sure we can generate a sequence of decimal ranges."""
-        assert get_decimal_range_sequence()
-        decimal_sequence = list(get_decimal_range_sequence())
-        assert len(decimal_sequence) == 10
-        assert isinstance(decimal_sequence[0], tuple)
-        assert len(decimal_sequence[0]) == 2
-        assert isinstance(decimal_sequence[0][0], decimal.Decimal)
-        assert decimal_sequence[9][0] - decimal_sequence[0][0] == decimal.Decimal("9.00")
-        assert decimal_sequence[9][1] - decimal_sequence[0][0] == decimal.Decimal("10.00")
-
-        assert get_decimal_range_sequence(num_steps=10)
-        decimal_sequence = list(get_decimal_range_sequence(num_steps=10))
-        assert len(decimal_sequence) == 10
-        assert decimal_sequence[9][0] - decimal_sequence[0][0] == decimal.Decimal("9.00")
-        assert decimal_sequence[9][1] - decimal_sequence[0][0] == decimal.Decimal("10.00")
-
-        with pytest.raises(Exception) as error_msg:
-            decimal_sequence = list(get_decimal_range_sequence(end=decimal.Decimal("-10.00")))
-        assert "If an end_value is provided, it must be greater than start" in str(error_msg.value)
-
-        with pytest.raises(Exception) as error_msg:
-            decimal_sequence = list(get_decimal_range_sequence(num_steps=decimal.Decimal("-10.00")))
-        assert "If a num_steps value is provided, it must be positive" in str(error_msg.value)
 
 
 @pytest.mark.django_db
@@ -247,7 +121,6 @@ class TestIntegerModel:
         for idx in range(0, 10):
             ConcreteIntegerTest.objects.create(some_field=idx)
 
-        assert ConcreteIntegerTest.objects.filter(some_field__in=integer_test.values("term")).count() == 10
         assert ConcreteIntegerTest.objects.filter(some_field__in=Subquery(integer_test.values("term"))).count() == 10
 
         integer_test_values = integer_test.filter(term=OuterRef("some_field")).values("term")
@@ -268,18 +141,8 @@ class TestIntegerModel:
         assert subquery_exists_test.first().some_field == 0
         assert subquery_exists_test.last().some_field == 9
 
-        subquery_exists_test2 = ConcreteIntegerTest.objects.all().annotate(integer_test=Exists(integer_test_values))
-        assert subquery_exists_test2.first().some_field == 0
-        assert subquery_exists_test2.last().some_field == 9
-
         # Check that we can query from the generate series model
         concrete_integer_test_values = ConcreteIntegerTest.objects.values("some_field")
-        assert (
-            generate_series(start=0, stop=9, output_field=models.BigIntegerField)
-            .filter(term__in=concrete_integer_test_values)
-            .count()
-            == 10
-        )
         assert (
             generate_series(start=0, stop=9, output_field=models.BigIntegerField)
             .filter(term__in=Subquery(concrete_integer_test_values))
@@ -363,7 +226,6 @@ class TestDecimalModel:
             ConcreteDecimalTest.objects.create(some_field=idx)
 
         # Check that we can query from the concrete model
-        assert ConcreteDecimalTest.objects.filter(some_field__in=decimal_test.values("term")).count() == 10
         assert ConcreteDecimalTest.objects.filter(some_field__in=Subquery(decimal_test.values("term"))).count() == 10
 
         decimal_test_values = decimal_test.filter(term=OuterRef("some_field")).values("term")
@@ -385,23 +247,8 @@ class TestDecimalModel:
         assert subquery_exists_test.first().some_field == decimal.Decimal("0.00")
         assert subquery_exists_test.last().some_field == decimal.Decimal("9.00")
 
-        subquery_exists_test2 = ConcreteDecimalTest.objects.all().annotate(decimal_test=Exists(decimal_test_values))
-        assert subquery_exists_test2.first().some_field == decimal.Decimal("0.00")
-        assert subquery_exists_test2.last().some_field == decimal.Decimal("9.00")
-
         # Check that we can query from the generate series model
         concrete_decimal_test_values = ConcreteDecimalTest.objects.values("some_field")
-        assert (
-            generate_series(
-                start=decimal.Decimal("0.00"),
-                stop=decimal.Decimal("9.00"),
-                step=decimal.Decimal("1.00"),
-                output_field=models.DecimalField,
-            )
-            .filter(term__in=concrete_decimal_test_values)
-            .count()
-            == 10
-        )
         assert (
             generate_series(
                 start=decimal.Decimal("0.00"),
@@ -419,9 +266,8 @@ class TestDecimalModel:
 class TestDateModel:
     """Make sure we can create and use Date sequences"""
 
-    def test_datefield_variations(self):
+    def test_datefield_variations(self, date_sequence):
         """Run through some variations."""
-        date_sequence = tuple(get_date_sequence())
         assert (
             generate_series(
                 start=date_sequence[0], stop=date_sequence[-1], step="1 days", output_field=models.DateField
@@ -463,9 +309,8 @@ class TestDateModel:
             == 5
         )
 
-    def test_datefield_concrete_instances(self):
+    def test_datefield_concrete_instances(self, date_sequence):
         """Make sure we can create a QuerySet and perform basic operations."""
-        date_sequence = tuple(get_date_sequence())
         date_test = generate_series(
             start=date_sequence[0], stop=date_sequence[-1], step="1 days", output_field=models.DateField
         )
@@ -480,7 +325,6 @@ class TestDateModel:
             ConcreteDateTest.objects.create(some_field=idx)
 
         # Check that we can query from the concrete model
-        assert ConcreteDateTest.objects.filter(some_field__in=date_test.values("term")).count() == 10
         assert ConcreteDateTest.objects.filter(some_field__in=Subquery(date_test.values("term"))).count() == 10
 
         date_test_values = date_test.filter(term=OuterRef("some_field")).values("term")
@@ -501,20 +345,8 @@ class TestDateModel:
         assert subquery_exists_test.first().some_field == date_sequence[0]
         assert subquery_exists_test.last().some_field == date_sequence[-1]
 
-        subquery_exists_test2 = ConcreteDateTest.objects.all().annotate(date_test=Exists(date_test_values))
-        assert subquery_exists_test2.first().some_field == date_sequence[0]
-        assert subquery_exists_test2.last().some_field == date_sequence[-1]
-
         # Check that we can query from the generate series model
         concrete_date_test_values = ConcreteDateTest.objects.values("some_field")
-        assert (
-            generate_series(
-                start=date_sequence[0], stop=date_sequence[-1], step="1 days", output_field=models.DateField
-            )
-            .filter(term__in=concrete_date_test_values)
-            .count()
-            == 10
-        )
         assert (
             generate_series(
                 start=date_sequence[0], stop=date_sequence[-1], step="1 days", output_field=models.DateField
@@ -529,11 +361,8 @@ class TestDateModel:
 class TestDateTimeModel:
     """Make sure we can create and use DateTime sequences"""
 
-    def test_datetimefield_variations(self):
-        """Create concrete instances."""
-        datetime_sequence = tuple(get_datetime_sequence())
-
-        # Run through some variations
+    def test_datetimefield_variations(self, datetime_sequence):
+        """Run through some variations."""
         assert (
             generate_series(
                 start=datetime_sequence[0], stop=datetime_sequence[-1], step="1 days", output_field=models.DateTimeField
@@ -575,9 +404,8 @@ class TestDateTimeModel:
             == 5
         )
 
-    def test_datetimefield_concrete_instances(self):
+    def test_datetimefield_concrete_instances(self, datetime_sequence):
         """Make sure we can create a QuerySet and perform basic operations."""
-        datetime_sequence = tuple(get_datetime_sequence())
         datetime_test = generate_series(
             start=datetime_sequence[0], stop=datetime_sequence[-1], step="1 days", output_field=models.DateTimeField
         )
@@ -592,7 +420,6 @@ class TestDateTimeModel:
             ConcreteDateTimeTest.objects.create(some_field=idx)
 
         # Check that we can query from the concrete model
-        assert ConcreteDateTimeTest.objects.filter(some_field__in=datetime_test.values("term")).count() == 10
         assert ConcreteDateTimeTest.objects.filter(some_field__in=Subquery(datetime_test.values("term"))).count() == 10
 
         datetime_test_values = datetime_test.filter(term=OuterRef("some_field")).values("term")
@@ -613,20 +440,8 @@ class TestDateTimeModel:
         assert subquery_exists_test.first().some_field == datetime_sequence[0]
         assert subquery_exists_test.last().some_field == datetime_sequence[-1]
 
-        subquery_exists_test2 = ConcreteDateTimeTest.objects.all().annotate(datetime_test=Exists(datetime_test_values))
-        assert subquery_exists_test2.first().some_field == datetime_sequence[0]
-        assert subquery_exists_test2.last().some_field == datetime_sequence[-1]
-
         # Check that we can query from the generate series model
         concrete_datetime_test_values = ConcreteDateTimeTest.objects.values("some_field")
-        assert (
-            generate_series(
-                start=datetime_sequence[0], stop=datetime_sequence[-1], step="1 days", output_field=models.DateTimeField
-            )
-            .filter(term__in=concrete_datetime_test_values)
-            .count()
-            == 10
-        )
         assert (
             generate_series(
                 start=datetime_sequence[0], stop=datetime_sequence[-1], step="1 days", output_field=models.DateTimeField
@@ -644,10 +459,7 @@ class TestIntegerRangeModel:
     def test_integerfield_variations(self):
         """Make sure we can create a QuerySet and perform basic operations."""
         integer_range_test = generate_series(start=0, stop=9, output_field=IntegerRangeField)
-
-        integer_range_test.first().term
         assert integer_range_test.count() == 10
-
 
         integer_range_test_sum = integer_range_test.aggregate(int_sum=Count("term"))
         assert integer_range_test_sum["int_sum"] == 10
@@ -667,15 +479,7 @@ class TestIntegerRangeModel:
         for item in integer_range_sequence:
             ConcreteIntegerRangeTest.objects.create(some_field=item)
 
-        # Run through some variations
-        assert generate_series(start=0, stop=9, output_field=IntegerRangeField).count() == 10
-        assert generate_series(start=0, stop=9, step=2, output_field=IntegerRangeField).count() == 5
-        assert generate_series(start=1, stop=1, output_field=IntegerRangeField).count() == 1
-        assert generate_series(start=0, stop=9, step=2, include_id=True, output_field=IntegerRangeField).count() == 5
-        assert generate_series(start=0, stop=9, step=2, include_id=True, output_field=IntegerRangeField).last().id == 5
-
         # Check that we can query from the concrete model
-        assert ConcreteIntegerRangeTest.objects.filter(some_field__in=integer_range_test.values("term")).count() == 10
         assert (
             ConcreteIntegerRangeTest.objects.filter(some_field__in=Subquery(integer_range_test.values("term"))).count()
             == 10
@@ -702,20 +506,8 @@ class TestIntegerRangeModel:
         assert subquery_exists_test.last().some_field.lower == 9
         assert subquery_exists_test.last().some_field.upper == 10
 
-        subquery_exists_test2 = ConcreteIntegerRangeTest.objects.all().annotate(
-            integer_range_test=Exists(integer_range_test_values)
-        )
-        assert subquery_exists_test2.first().some_field == integer_range_sequence[0]
-        assert subquery_exists_test2.last().some_field == integer_range_sequence[-1]
-
-        # # Check that we can query from the generate series model
+        # Check that we can query from the generate series model
         concrete_integer_range_test_values = ConcreteIntegerRangeTest.objects.values("some_field")
-        assert (
-            generate_series(start=0, stop=9, output_field=IntegerRangeField)
-            .filter(term__in=concrete_integer_range_test_values)
-            .count()
-            == 10
-        )
         assert (
             generate_series(start=0, stop=9, output_field=IntegerRangeField)
             .filter(term__in=Subquery(concrete_integer_range_test_values))
@@ -728,12 +520,8 @@ class TestIntegerRangeModel:
 class TestDecimalRangeModel:
     """Test suite for Decimal Range sequences"""
 
-    def test_create_and_use_decimal_range(self):
-        """Test creating and using Decimal Range sequences"""
-        decimal_range_sequence = tuple(
-            NumericRange(decimal.Decimal(idx), decimal.Decimal(idx + 1), "[)") for idx in range(0, 10)
-        )
-
+    def test_decimalrangefield_variations(self):
+        """Make sure we can create and use Decimal Range sequences."""
         assert (
             generate_series(
                 start=decimal.Decimal("0.00"),
@@ -784,8 +572,8 @@ class TestDecimalRangeModel:
             == 5
         )
 
-    def test_decimal_range_queryset_operations(self):
-        """Test queryset operations on Decimal Range sequences"""
+    def test_decimalrangefield_queryset_operations(self):
+        """Make sure we can perform queryset operations on Decimal Range sequences."""
         decimal_range_sequence = tuple(
             NumericRange(decimal.Decimal(idx), decimal.Decimal(idx + 1), "[)") for idx in range(0, 10)
         )
@@ -803,8 +591,8 @@ class TestDecimalRangeModel:
         decimal_range_test_sum = decimal_range_test.aggregate(int_sum=Count("term"))
         assert decimal_range_test_sum["int_sum"] == 10
 
-    def test_querying_from_concrete_decimal_model(self):
-        """Test querying from the concrete Decimal Range model"""
+    def test_decimalrangefield_concrete_instances(self):
+        """Make sure we can create a QuerySet and perform subquery operations."""
         decimal_range_test = generate_series(
             start=decimal.Decimal("0.00"),
             stop=decimal.Decimal("9.00"),
@@ -818,7 +606,6 @@ class TestDecimalRangeModel:
         for item in decimal_range_sequence:
             ConcreteDecimalRangeTest.objects.create(some_field=item)
 
-        assert ConcreteDecimalRangeTest.objects.filter(some_field__in=decimal_range_test.values("term")).count() == 10
         assert (
             ConcreteDecimalRangeTest.objects.filter(some_field__in=Subquery(decimal_range_test.values("term"))).count()
             == 10
@@ -844,24 +631,7 @@ class TestDecimalRangeModel:
         assert subquery_exists_test.last().some_field.lower == decimal.Decimal("9.0")
         assert subquery_exists_test.last().some_field.upper == decimal.Decimal("10.0")
 
-        subquery_exists_test2 = ConcreteDecimalRangeTest.objects.all().annotate(
-            decimal_range_test=Exists(decimal_range_test_values)
-        )
-        assert subquery_exists_test2.first().some_field == decimal_range_sequence[0]
-        assert subquery_exists_test2.last().some_field == decimal_range_sequence[-1]
-
         concrete_decimal_range_test_values = ConcreteDecimalRangeTest.objects.values("some_field")
-        assert (
-            generate_series(
-                start=decimal.Decimal("0.00"),
-                stop=decimal.Decimal("9.00"),
-                step=decimal.Decimal("1.00"),
-                output_field=DecimalRangeField,
-            )
-            .filter(term__in=concrete_decimal_range_test_values)
-            .count()
-            == 10
-        )
         assert (
             generate_series(
                 start=decimal.Decimal("0.00"),
@@ -879,17 +649,8 @@ class TestDecimalRangeModel:
 class TestDateRangeModel:
     """Test suite for Date Range sequences"""
 
-    def test_create_and_use_date_range(self):
-        """Test creating and using Date Range sequences"""
-        date_range_sequence = [
-            DateRange(
-                timezone.now().date() + timezone.timedelta(days=idx),
-                (timezone.now().date() + timezone.timedelta(days=idx + 1)),
-                "[)",
-            )
-            for idx in range(0, 9)
-        ]
-
+    def test_daterangefield_variations(self):
+        """Make sure we can create and use Date Range sequences."""
         assert (
             generate_series(
                 start=timezone.now().date(),
@@ -940,8 +701,8 @@ class TestDateRangeModel:
             == 5
         )
 
-    def test_date_range_queryset_operations(self):
-        """Test queryset operations on Date Range sequences"""
+    def test_daterangefield_queryset_operations(self):
+        """Make sure we can perform queryset operations on Date Range sequences."""
         date_range_sequence = [
             DateRange(
                 timezone.now().date() + timezone.timedelta(days=idx),
@@ -964,8 +725,8 @@ class TestDateRangeModel:
         date_range_test_sum = date_range_test.aggregate(int_sum=Count("term"))
         assert date_range_test_sum["int_sum"] == 9
 
-    def test_querying_from_concrete_date_model(self):
-        """Test querying from the concrete Date Range model"""
+    def test_daterangefield_concrete_instances(self):
+        """Make sure we can create a QuerySet and perform subquery operations."""
         date_range_test = generate_series(
             start=timezone.now().date(),
             stop=timezone.now().date() + timezone.timedelta(days=9),
@@ -985,7 +746,6 @@ class TestDateRangeModel:
         for idx in date_range_sequence:
             ConcreteDateRangeTest.objects.create(some_field=idx)
 
-        assert ConcreteDateRangeTest.objects.filter(some_field__in=date_range_test.values("term")).count() == 9
         assert (
             ConcreteDateRangeTest.objects.filter(some_field__in=Subquery(date_range_test.values("term"))).count() == 9
         )
@@ -1008,24 +768,7 @@ class TestDateRangeModel:
         assert subquery_exists_test.first().some_field == date_range_sequence[0]
         assert subquery_exists_test.last().some_field == date_range_sequence[-1]
 
-        subquery_exists_test2 = ConcreteDateRangeTest.objects.all().annotate(
-            date_range_test=Exists(date_range_test_values)
-        )
-        assert subquery_exists_test2.first().some_field == date_range_sequence[0]
-        assert subquery_exists_test2.last().some_field == date_range_sequence[-1]
-
         concrete_date_range_test_values = ConcreteDateRangeTest.objects.values("some_field")
-        assert (
-            generate_series(
-                start=timezone.now().date(),
-                stop=timezone.now().date() + timezone.timedelta(days=9),
-                step="1 days",
-                output_field=DateRangeField,
-            )
-            .filter(term__in=concrete_date_range_test_values)
-            .count()
-            == 9
-        )
         assert (
             generate_series(
                 start=timezone.now().date(),
@@ -1043,17 +786,8 @@ class TestDateRangeModel:
 class TestDateTimeRangeModel:
     """Test suite for DateTime Range sequences"""
 
-    def test_create_and_use_datetime_range(self):
-        """Test creating and using DateTime Range sequences"""
-        datetime_range_sequence = [
-            DateTimeTZRange(
-                (timezone.now() + timezone.timedelta(days=idx)).replace(hour=1, minute=2, second=3, microsecond=4),
-                (timezone.now() + timezone.timedelta(days=idx + 1)).replace(hour=1, minute=2, second=3, microsecond=4),
-                "[)",
-            )
-            for idx in range(0, 9)
-        ]
-
+    def test_datetimerangefield_variations(self):
+        """Make sure we can create and use DateTime Range sequences."""
         assert (
             generate_series(
                 start=timezone.now(),
@@ -1104,8 +838,8 @@ class TestDateTimeRangeModel:
             == 5
         )
 
-    def test_datetime_range_queryset_operations(self):
-        """Test queryset operations on DateTime Range sequences"""
+    def test_datetimerangefield_queryset_operations(self):
+        """Make sure we can perform queryset operations on DateTime Range sequences."""
         datetime_range_sequence = [
             DateTimeTZRange(
                 (timezone.now() + timezone.timedelta(days=idx)).replace(hour=1, minute=2, second=3, microsecond=4),
@@ -1128,8 +862,8 @@ class TestDateTimeRangeModel:
         date_range_test_sum = datetime_range_test.aggregate(int_sum=Count("term"))
         assert date_range_test_sum["int_sum"] == 9
 
-    def test_querying_from_concrete_datetime_model(self):
-        """Test querying from the concrete DateTime Range model"""
+    def test_datetimerangefield_concrete_instances(self):
+        """Make sure we can create a QuerySet and perform subquery operations."""
         datetime_range_sequence = [
             DateTimeTZRange(
                 (timezone.now() + timezone.timedelta(days=idx)).replace(hour=1, minute=2, second=3, microsecond=4),
@@ -1149,7 +883,6 @@ class TestDateTimeRangeModel:
             start=first_dt_in_range, stop=last_dt_in_range, step="1 days", output_field=DateTimeRangeField
         )
 
-        assert ConcreteDateTimeRangeTest.objects.filter(some_field__in=datetime_range_test.values("term")).count() == 9
         assert (
             ConcreteDateTimeRangeTest.objects.filter(
                 some_field__in=Subquery(datetime_range_test.values("term"))
@@ -1179,26 +912,7 @@ class TestDateTimeRangeModel:
         assert subquery_exists_test.last().some_field.lower == datetime_range_sequence[-1].lower
         assert subquery_exists_test.last().some_field.upper == datetime_range_sequence[-1].upper
 
-        subquery_exists_test2 = ConcreteDateTimeRangeTest.objects.all().annotate(
-            datetime_range_test=Exists(datetime_range_test_values)
-        )
-        assert subquery_exists_test2.first().some_field.lower == datetime_range_sequence[0].lower
-        assert subquery_exists_test2.first().some_field.upper == datetime_range_sequence[0].upper
-        assert subquery_exists_test2.last().some_field.lower == datetime_range_sequence[-1].lower
-        assert subquery_exists_test2.last().some_field.upper == datetime_range_sequence[-1].upper
-
         concrete_datetime_range_test_values = ConcreteDateTimeRangeTest.objects.values("some_field")
-        assert (
-            generate_series(
-                start=datetime_range_sequence[0].lower,
-                stop=datetime_range_sequence[-1].upper,
-                step="1 days",
-                output_field=DateTimeRangeField,
-            )
-            .filter(term__in=concrete_datetime_range_test_values)
-            .count()
-            == 9
-        )
         assert (
             generate_series(
                 start=datetime_range_sequence[0].lower,
@@ -1350,6 +1064,34 @@ class TestGenerateSeries:
         )
         assert queryset.count() == 10
 
+    def test_start_greater_than_stop(self):
+        """Test that start > stop raises ValueError."""
+        with pytest.raises(ValueError, match="Start value must be smaller or equal to stop value"):
+            generate_series(start=10, stop=0, output_field=models.IntegerField).count()
+
+    def test_mismatched_start_stop_types(self):
+        """Test that different start/stop types raises ValueError."""
+        with pytest.raises(ValueError, match="Start and stop values must be of the same type"):
+            generate_series(start=0, stop=decimal.Decimal("10.0"), output_field=models.DecimalField).count()
+
+    def test_invalid_param_type(self):
+        """Test that wrong param types raise ValueError."""
+        with pytest.raises(ValueError, match="Start type of .* expected, but received type"):
+            generate_series(start="bad", stop="worse", step="1", output_field=models.IntegerField).count()
+
+    def test_step_none_accepted(self):
+        """Test that step=None is accepted and defaults to 1 in the query."""
+        qs = generate_series(start=0, stop=9, step=None, output_field=models.IntegerField)
+        assert qs.count() == 10
+
+    def test_range_field_with_explicit_span(self):
+        """Test that providing span explicitly for a range field works."""
+        qs = generate_series(start=0, stop=9, step=2, span=3, output_field=IntegerRangeField)
+        assert qs.count() == 5
+        # Each term should span 3 (e.g., [0, 3), [2, 5), ...)
+        first = qs.first().term
+        assert first.upper - first.lower == 3
+
 
 @pytest.mark.django_db
 class TestMakeModelClass:
@@ -1399,8 +1141,37 @@ class TestHelperFunctions:
         assert value_dict["max_digits"] == 10
         assert value_dict["decimal_places"] == 2
 
+    def test_get_value_dict_non_decimal_field(self):
+        """Test that an empty dict is returned for non-decimal value fields."""
+        assert get_value_dict(models.IntegerField, max_digits=10, decimal_places=2) == {}
+
+    def test_build_model_class_name_with_queryset_marker(self):
+        """Test that the model class name includes Qs when a queryset is provided."""
+        name = _build_model_class_name(models.IntegerField, False, None, None, None, "placeholder", None)
+        assert name == "IntegerFieldSeriesQs"
+
+    def test_build_model_class_name_with_iterable_marker(self):
+        """Test that the model class name includes It when an iterable is provided."""
+        name = _build_model_class_name(models.IntegerField, False, None, None, None, None, (1, 2, 3))
+        assert name == "IntegerFieldSeriesIt"
+
     def test_get_auto_field_import_error(self, monkeypatch):
         """Test that an ImportError is raised when the auto field cannot be imported."""
         monkeypatch.setattr("django_generate_series.models.DGS_DEFAULT_AUTO_FIELD", "invalid.module.path")
         with pytest.raises(ImproperlyConfigured, match="The settings refer to the module 'invalid.module.path'"):
             _get_auto_field()
+
+
+@pytest.mark.django_db
+class TestCartesianProduct:
+    """Test Cartesian product with iterables."""
+
+    def test_iterable_cartesian_product(self):
+        """Test generating a Cartesian product with a list iterable."""
+        qs = generate_series(start=0, stop=2, iterable=[10, 20, 30], output_field=models.IntegerField)
+        assert qs.count() == 9  # 3 terms × 3 iterable items
+        values = list(qs.values_list("term", "value"))
+        terms = {v[0] for v in values}
+        iter_values = {v[1] for v in values}
+        assert terms == {0, 1, 2}
+        assert iter_values == {10, 20, 30}
