@@ -1,5 +1,11 @@
 # django-generate-series
 
+[![PyPI](https://img.shields.io/pypi/v/django-generate-series)](https://pypi.org/project/django-generate-series/)
+[![Python versions](https://img.shields.io/pypi/pyversions/django-generate-series)](https://pypi.org/project/django-generate-series/)
+[![Django versions](https://img.shields.io/pypi/djversions/django-generate-series)](https://pypi.org/project/django-generate-series/)
+[![Documentation](https://readthedocs.org/projects/django-generate-series/badge/?version=latest)](https://django-generate-series.readthedocs.io/en/latest/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+
 Use Postgres' generate_series to create sequences with Django's ORM
 
 https://django-generate-series.readthedocs.io/
